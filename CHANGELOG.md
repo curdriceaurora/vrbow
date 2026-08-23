@@ -2,6 +2,34 @@
 
 This document records all changes to **Vrbow**.
 
+## [v1.3.0] - 2026-08-23
+
+### Multi-Site Listing Support
+- **Airbnb PDP Adapter**: Adds Airbnb listing-page policy extraction through the shared site adapter abstraction, including host pet toggles, buried fee details, and sparse allowed-state handling.
+- **Expedia PDP Adapter**: Adds Expedia listing-page policy extraction for native Expedia and Vrbo-sourced Expedia pages, including pets-allowed, no-pets, count, weight, and fee policy details.
+- **Shared Site Registry**: Routes supported-site detection, listing parsing, PDP mount selection, section labels, fetch URL decoration, and site-qualified cache keys through `src/shared/site-registry.js`.
+- **Release Metadata**: Updates the extension name, description, and install instructions to reflect Vrbo, Airbnb, and Expedia listing support.
+
+### Vrbo Reliability and Search Infrastructure
+- **Apollo Alias Resolution**: Resolves Vrbo `PropertyInfo` records when Apollo keys use internal aliases while preserving stale-record protection on SPA listing transitions.
+- **Site-Scoped Search Cache**: Qualifies cached policies by site so future multi-site expansion cannot collide with Vrbo search cache entries.
+- **Scroll-Aware Search Scheduling**: Pauses background search work during fast scrolling and defers entry scheduling until cards are idle and stable.
+- **Thousands-Separator Fee Parsing**: Correctly parses pet fees with thousands separators and hardens extraction around malformed or ambiguous fee text.
+
+### Panel and UI Polish
+- **Responsive Listing Panel Positioning**: Places the panel beside the listing renderer on wide viewports and starts collapsed on constrained layouts.
+- **Manual Toggle Preservation**: Preserves user collapse/expand intent across rescans and avoids unwanted state flips during layout mode transitions.
+- **Search Tooltip Alignment**: Aligns tooltip row spacing, typography, warning borders, and source-label copy with the listing panel design language.
+- **Source Label Cleanup**: Shortens jump-link source labels and widens the source column for easier scanning.
+
+### Repository and Test Coverage
+- **Runtime Source Layout**: Moves the extension runtime into `src/`, with `content/`, `popup/`, `shared/`, `sites/`, and `icons/` subdirectories.
+- **Versioned Packaging**: Adds `tools/build-zip.js`, producing Chrome-ready `dist/vrbow-vX.Y.Z.zip` archives from the manifest version.
+- **Adapter Test Coverage**: Adds unit and real-extension e2e coverage for Airbnb and Expedia adapters, with fixture-backed guardrails preventing accidental live network traffic.
+- **Coverage Accounting**: Fixes coverage accounting for same-basename adapter files so each site adapter is measured independently.
+
+---
+
 ## [v1.2.0] - 2026-08-18
 
 ### Search Request Pacing & Queue Engine
