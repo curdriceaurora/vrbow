@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vrbow README listing demo</title>
+  <link rel="stylesheet" href="../src/content/tokens.css">
+  <link rel="stylesheet" href="../src/content/content.css">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: #202124;
+      background: #fff;
+      font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .site-header {
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 48px;
+      border-bottom: 1px solid #e3e5e8;
+      background: #fff;
+    }
+    .brand { color: #2451a6; font-size: 27px; font-weight: 750; letter-spacing: -.04em; }
+    .nav { display: flex; gap: 26px; color: #3d4650; font-weight: 600; }
+    .listing-shell { width: 820px; margin: 0 0 64px 48px; }
+    .crumbs { padding: 22px 0 14px; color: #52606d; font-size: 13px; }
+    .gallery {
+      height: 260px;
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 8px;
+      overflow: hidden;
+      border-radius: 14px;
+    }
+    .photo-main, .photo-stack > div {
+      background:
+        linear-gradient(135deg, rgb(15 83 90 / 5%), rgb(24 61 67 / 34%)),
+        linear-gradient(25deg, #b8d7d2 0 28%, #edf3e7 28% 55%, #8eb8b2 55% 100%);
+    }
+    .photo-main { position: relative; }
+    .photo-main::after {
+      content: "";
+      position: absolute;
+      left: 12%; right: 10%; bottom: 0; height: 55%;
+      background: linear-gradient(135deg, #faf8f0 0 48%, #d4cab8 48% 52%, #46636a 52% 100%);
+      clip-path: polygon(0 28%, 50% 0, 100% 26%, 100% 100%, 0 100%);
+    }
+    .photo-stack { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .photo-stack > div:nth-child(2) { filter: hue-rotate(28deg) saturate(.8); }
+    .details { padding: 24px 0; border-bottom: 1px solid #e1e4e7; }
+    h1 { margin: 0 0 8px; font-size: 28px; line-height: 1.2; letter-spacing: -.02em; }
+    .meta { color: #52606d; }
+    .rating { margin-top: 12px; font-weight: 650; }
+    .columns { display: grid; grid-template-columns: 1fr 270px; gap: 44px; padding-top: 24px; }
+    .host { display: flex; align-items: center; gap: 12px; padding-bottom: 22px; border-bottom: 1px solid #e1e4e7; }
+    .avatar { width: 44px; height: 44px; border-radius: 50%; background: #d9e5e2; }
+    h2 { margin: 24px 0 8px; font-size: 20px; }
+    .rule-card { margin-top: 18px; padding: 18px; border: 1px solid #d8dde2; border-radius: 12px; }
+    .booking { padding: 20px; border: 1px solid #d8dde2; border-radius: 14px; box-shadow: 0 4px 18px rgb(0 0 0 / 9%); }
+    .price { font-size: 21px; font-weight: 750; }
+    .book-button { margin-top: 18px; padding: 12px; border-radius: 9px; color: #fff; background: #2451a6; text-align: center; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand">vrbo</div>
+    <nav class="nav"><span>Download the app</span><span>Trips</span><span>Sign in</span></nav>
+  </header>
+  <main class="listing-shell" data-demo-listing>
+    <div class="crumbs">United States › North Carolina › Lake Lure</div>
+    <section class="gallery" aria-label="Property photos">
+      <div class="photo-main"></div>
+      <div class="photo-stack"><div></div><div></div></div>
+    </section>
+    <section class="details">
+      <h1>Lakefront retreat with fenced yard and private dock</h1>
+      <div class="meta">Entire home · 3 bedrooms · 4 beds · 2 bathrooms</div>
+      <div class="rating">★ 4.93 · 87 reviews</div>
+    </section>
+    <div class="columns">
+      <div>
+        <div class="host"><div class="avatar"></div><strong>Hosted by Morgan</strong></div>
+        <h2>About this property</h2>
+        <p>Relax beside the lake with room for the whole family and a secure yard for your dogs.</p>
+        <section class="rule-card" aria-label="House rules">
+          <strong>House rules</strong>
+          <p>Maximum 2 dogs, each 50 lbs or less. A $75 pet fee applies per stay. Prior approval is required.</p>
+        </section>
+      </div>
+      <aside class="booking"><span class="price">$286</span> night<div class="book-button">Check availability</div></aside>
+    </div>
+  </main>
+  <script src="../src/shared/extract.js"></script>
+  <script src="../src/shared/formatters.js"></script>
+  <script src="../src/content/pdp-panel.js"></script>
+  <script>
+    const panel = VdpPdpPanel.createPdpPanel({
+      siteRegistry: {
+        getPdpContentColumnSelector: () => "[data-demo-listing]",
+        getPdpSectionConfig: () => ({
+          closeMatchers: [], headingCategories: [], labelCategories: [],
+          fallbackLabel: "Listing details", fallbackShortLabel: "Listing"
+        })
+      },
+      safeStorageSet: () => {},
+      scheduleRescan: () => {},
+      isListingUrl: () => true,
+      looksLikeListingPage: () => true
+    });
+
+    panel.render({
+      petsAllowed: true,
+      maxDogs: 2,
+      weightLimit: { value: 50, unit: "lb" },
+      fee: { amount: 75, currency: "USD", period: "stay" },
+      deposit: null,
+      approvalRequired: true,
+      restrictionsFound: true,
+      _raw: {
+        found: true,
+        entries: [{ priority: 2 }],
+        maxDogsSnippet: "Maximum 2 dogs",
+        maxDogsSource: "House rules",
+        weightSnippet: "50 lbs or less",
+        weightSource: "House rules",
+        feeSnippet: "$75 pet fee",
+        feeSource: "House rules",
+        preRegSnippet: "Prior approval is required",
+        preRegSource: "House rules",
+        otherNotes: [
+          { text: "Dogs must be leashed outside the fenced yard.", source: "House rules" },
+          { text: "Please keep dogs off the upstairs furniture.", source: "House rules" }
+        ]
+      }
+    });
+    window.__readmeDemoReady = true;
+  </script>
+</body>
+</html>
