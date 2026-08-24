@@ -50,7 +50,7 @@ function createPanel(options = {}) {
   const suppression = [];
   const policies = [];
   const panel = createPdpPanel({
-    getSiteRegistry: () => globalThis.VdpSiteRegistry,
+    siteRegistry: globalThis.VdpSiteRegistry,
     getListingIdFromUrl: () => "3000003",
     isListingUrl: () => options.isListing !== false,
     looksLikeListingPage: () => options.isListing !== false,
@@ -207,15 +207,22 @@ test("pdp DOM helpers resolve sources, navigation targets, and dialogs", async (
   panel.reset();
 });
 
-test("pdp default instance uses shared globals", async () => {
+test("pdp factory accepts shared globals explicitly", async () => {
   installDom();
   globalThis.chrome = {
     storage: { local: { set(_values, callback) { callback?.(); } } },
   };
   delete require.cache[require.resolve("../src/content/pdp-panel.js")];
   const moduleApi = require("../src/content/pdp-panel.js");
-  moduleApi.setApolloData(globalThis.VdpSiteRegistry.getPdpStructuredPayload());
-  await moduleApi.scan(false);
+  const panel = moduleApi.createPdpPanel({
+    siteRegistry: globalThis.VdpSiteRegistry,
+    getListingIdFromUrl: () => "3000003",
+    isListingUrl: () => true,
+    looksLikeListingPage: () => true,
+    safeStorageSet: () => {},
+  });
+  panel.setApolloData(globalThis.VdpSiteRegistry.getPdpStructuredPayload());
+  await panel.scan(false);
   assert.ok(document.getElementById("vdp-panel"));
-  moduleApi.reset();
+  panel.reset();
 });

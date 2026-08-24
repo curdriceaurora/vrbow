@@ -52,7 +52,12 @@ before(() => {
   installIntervalGuard();
   installVdpGlobals();
 
-  panelTest = require("../src/content/pdp-panel.js").__test;
+  panelTest = require("../src/content/pdp-panel.js").createPdpPanel({
+    siteRegistry: globalThis.VdpSiteRegistry,
+    getListingIdFromUrl: () => null,
+    isListingUrl: () => false,
+    looksLikeListingPage: () => false,
+  }).__test;
   ({ sparseStateMessage } = panelTest);
 });
 

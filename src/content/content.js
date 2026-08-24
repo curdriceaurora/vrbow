@@ -202,6 +202,7 @@
         handleNavigate,
         handleMutate,
         handleInvalidate,
+        getSiteRegistry,
         getLifecycle: () => lifecycle,
         getPanel: () => pdpPanel,
         getSearchBadges: () => searchBadges,

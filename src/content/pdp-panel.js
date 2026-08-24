@@ -2,7 +2,7 @@
 (function initPdpPanel(root, factory) {
   const api = factory(root);
   if (typeof module !== "undefined" && module.exports) {
-    module.exports = { ...api, ...api.createPdpPanel() };
+    module.exports = api;
   } else {
     root.VdpPdpPanel = api;
   }
@@ -11,13 +11,11 @@
     const PANEL_ID = "vdp-panel";
     const { getSentences, isPetRelated, buildCorpus, extractPolicy } = root.VDPExtract;
     const { escapeHtml } = root.VdpFormatters;
-    const siteRegistry = deps.siteRegistry || deps.getSiteRegistry?.() || root.VdpSiteRegistry || null;
-    if (!siteRegistry) console.warn("[vrbow] VdpSiteRegistry is unavailable; check script load order");
-    const getSiteRegistry = () => siteRegistry;
-    const getListingIdFromUrl = deps.getListingIdFromUrl || ((url) => getSiteRegistry()?.getPropertyId(url || root.location?.href) || null);
-    const isListingUrl = deps.isListingUrl || ((url) => getSiteRegistry()?.isListingUrl(url || root.location?.href) || false);
-    const looksLikeListingPage = deps.looksLikeListingPage || (() => isListingUrl(root.location?.href));
-    const safeStorageSet = deps.safeStorageSet || (() => {});
+    const siteRegistry = deps.siteRegistry;
+    const getListingIdFromUrl = deps.getListingIdFromUrl;
+    const isListingUrl = deps.isListingUrl;
+    const looksLikeListingPage = deps.looksLikeListingPage;
+    const safeStorageSet = deps.safeStorageSet;
     const scheduleRescan = deps.scheduleRescan || (() => {});
     const withMutationsSuppressed = deps.withMutationsSuppressed || ((work) => work());
     const onPolicy = deps.onPolicy || (() => {});
@@ -243,7 +241,7 @@
   //
   // No local copy of Vrbo's ~20-entry category tables here: manifest.json
   // loads shared/site-registry.js before content/content.js in the same
-  // content-script bundle, so getSiteRegistry() is always populated by the
+  // content-script bundle, so siteRegistry is always populated by the
   // time this runs — reg?.getPdpSectionConfig(...) never actually falls
   // through in production. If it somehow did (registry failed to load
   // entirely — a state severe enough that search-card detection above is
@@ -257,7 +255,7 @@
   let cachedPdpSectionConfig = null;
   function getPdpSectionConfig() {
     if (!cachedPdpSectionConfig) {
-      const reg = getSiteRegistry();
+      const reg = siteRegistry;
       cachedPdpSectionConfig = reg?.getPdpSectionConfig(location.href) || {
         closeMatchers: [],
         headingCategories: [],
@@ -395,7 +393,7 @@
   let cachedPdpContentColumnSelector = null;
   function getPdpContentColumnSelector() {
     if (!cachedPdpContentColumnSelector) {
-      const reg = getSiteRegistry();
+      const reg = siteRegistry;
       cachedPdpContentColumnSelector = reg?.getPdpContentColumnSelector(location.href) || DEFAULT_PDP_CONTENT_COLUMN_SELECTOR;
     }
     return cachedPdpContentColumnSelector;
@@ -853,7 +851,7 @@
   // cross-module mutation of another module's object — not clearly an
   // improvement. Left as-is.
   function getStructuredPdpPayload() {
-    const reg = getSiteRegistry();
+    const reg = siteRegistry;
     const payload = reg?.getPdpStructuredPayload?.(location.href);
     return payload || latestApolloPayload;
   }

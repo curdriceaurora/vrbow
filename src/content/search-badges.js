@@ -2,17 +2,15 @@
 (function initSearchBadges(root, factory) {
   const api = factory(root);
   if (typeof module !== "undefined" && module.exports) {
-    module.exports = { ...api, ...api.createSearchBadges() };
+    module.exports = api;
   } else {
     root.VdpSearchBadges = api;
   }
 })(globalThis, (root) => {
   function createSearchBadges(deps = {}) {
-    const siteRegistry = deps.siteRegistry || deps.getSiteRegistry?.() || root.VdpSiteRegistry || null;
-    if (!siteRegistry) console.warn("[vrbow] VdpSiteRegistry is unavailable; check script load order");
-    const getSiteRegistry = () => siteRegistry;
-    const isSearchUrl = deps.isSearchUrl || ((url) => getSiteRegistry()?.isSearchUrl(url || root.location?.href) || false);
-    const createSafeStorageWrapper = deps.createSafeStorageWrapper || (() => deps.storage || null);
+    const siteRegistry = deps.siteRegistry;
+    const isSearchUrl = deps.isSearchUrl;
+    const createSafeStorageWrapper = deps.createSafeStorageWrapper;
     const getSearchApolloData = deps.getSearchApolloData || (() => null);
 
   // ---------- Search Page Card Badging & Hover Tooltips ----------
@@ -143,12 +141,12 @@
   ].join(", ");
 
   function getSearchCardSelector() {
-    const reg = getSiteRegistry();
+    const reg = siteRegistry;
     return reg?.getSearchCardSelector(location.href) || DEFAULT_CARD_SELECTORS_QUERY;
   }
 
   function resolveBadgeContainer(card) {
-    const reg = getSiteRegistry();
+    const reg = siteRegistry;
     const selectors = reg?.getCardContentSelector(location.href) || BADGE_CONTAINER_SELECTORS;
     const list = Array.isArray(selectors) ? selectors : selectors.split(",").map((s) => s.trim());
     for (const selector of list) {
@@ -355,7 +353,7 @@
     try {
       const u = new URL(urlStr, location.href);
       if (u.protocol !== "https:") return null;
-      const registry = getSiteRegistry();
+      const registry = siteRegistry;
       if (!registry || !registry.isListingUrl(u.href)) return null;
       const propId = registry.getPropertyId(u.href);
       if (!propId) return null;
@@ -1071,7 +1069,7 @@
     const footer = document.createElement("div");
     footer.className = "vdp-tooltip-footer";
     const link = document.createElement("a");
-    const registry = getSiteRegistry();
+    const registry = siteRegistry;
     if (typeof url === "string" && ((registry && registry.isListingUrl(url, location.href)) || url.startsWith("/"))) {
       link.href = url;
     } else {

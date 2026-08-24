@@ -1567,7 +1567,7 @@ test("search-badges.js: direct badge and tooltip UI contract", async (t) => {
     delete globalThis.VdpSiteRegistry;
     console.warn = (...args) => warnings.push(args);
     try {
-      moduleApi.createSearchBadges({ getSiteRegistry: () => null });
+      api.getSiteRegistry();
     } finally {
       globalThis.VdpSiteRegistry = originalRegistry;
       console.warn = originalWarn;
@@ -1575,10 +1575,10 @@ test("search-badges.js: direct badge and tooltip UI contract", async (t) => {
     assert.match(warnings[0][0], /VdpSiteRegistry is unavailable/);
 
     const injected = moduleApi.createSearchBadges({
-      getSiteRegistry: () => ({
+      siteRegistry: {
         getCardContentSelector: () => ".missing",
         isSearchUrl: () => false,
-      }),
+      },
       isSearchUrl: () => false,
       createSafeStorageWrapper: () => mockChromeStorage,
       getSearchApolloData: () => null,
