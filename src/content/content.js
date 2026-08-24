@@ -54,8 +54,8 @@
   }
 
   function searchEnabled(callback) {
-    lifecycle.storage.get(["vrbow_enable_search_badging"], (data) => {
-      callback(data?.vrbow_enable_search_badging === true);
+    lifecycle.storage.get(["paw_enable_search_badging"], (data) => {
+      callback(data?.paw_enable_search_badging === true);
     });
   }
 
@@ -115,7 +115,7 @@
     withMutationsSuppressed,
     onPolicy: ({ policy }) => {
       lastPolicy = policy;
-      window.__vdpLastPolicy = policy;
+      window.__pawLastPolicy = policy;
     },
   });
 
@@ -150,8 +150,8 @@
         lifecycle.__test.invalidate();
         return;
       }
-      if (area !== "local" || !changes.vrbow_enable_search_badging || !isSearchUrl(location.href)) return;
-      if (changes.vrbow_enable_search_badging.newValue === true) {
+      if (area !== "local" || !changes.paw_enable_search_badging || !isSearchUrl(location.href)) return;
+      if (changes.paw_enable_search_badging.newValue === true) {
         searchBadges.start();
       } else {
         searchBadges.stop();

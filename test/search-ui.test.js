@@ -639,7 +639,7 @@ function installHarness() {
     },
   };
 
-  storageData.set("vrbow_enable_search_badging", true);
+  storageData.set("paw_enable_search_badging", true);
   const contentTest = require("../src/content/content.js").__test;
   const panelTest = contentTest.getPanel().__test;
   const searchTest = contentTest.getSearchBadges().__test;
@@ -654,7 +654,7 @@ function freshSearchPage(options = {}) {
   clearAllTimers();
   for (const child of mockDocument.body.childNodes.slice()) child.remove();
   storageData.clear();
-  storageData.set("vrbow_enable_search_badging", true);
+  storageData.set("paw_enable_search_badging", true);
   fetchLog.length = 0;
   hangingIds.clear();
   hangingResolvers.clear();

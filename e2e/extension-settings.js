@@ -9,7 +9,7 @@ async function enableSearchBadging(context) {
 
     await page.goto(`chrome-extension://${extensionId}/popup/popup.html`);
     await page.evaluate(() => new Promise((resolve, reject) => {
-      chrome.storage.local.set({ vrbow_enable_search_badging: true }, () => {
+      chrome.storage.local.set({ paw_enable_search_badging: true }, () => {
         const error = chrome.runtime.lastError;
         if (error) reject(new Error(error.message));
         else resolve();

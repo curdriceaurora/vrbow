@@ -91,7 +91,7 @@ describe("expedia adapter: URL matching and property id extraction", () => {
     assert.equal(typeof id, "string");
     assert.equal(id, fixture.propertyId);
     assert.equal(expediaSite.getPropertyId("https://www.expedia.com/Hotel-Search?destination=Pensacola"), null);
-    assert.equal(expediaSite.getCacheKey(id), `vrbow_cache_expedia_${id}`);
+    assert.equal(expediaSite.getCacheKey(id), `paw_cache_expedia_${id}`);
   });
 
   test("canonical fetch URL strips query strings and rejects off-site URLs", () => {

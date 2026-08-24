@@ -416,14 +416,14 @@ describe("site-registry: site adapter capabilities & DOM selectors", () => {
   });
 
   test("registry getCacheKey creates site-qualified cache keys", () => {
-    assert.equal(siteRegistry.getCacheKey("https://www.vrbo.com/123456", "123456"), "vrbow_cache_123456");
-    assert.equal(vrbo.getCacheKey("9999"), "vrbow_cache_9999");
+    assert.equal(siteRegistry.getCacheKey("https://www.vrbo.com/123456", "123456"), "paw_cache_123456");
+    assert.equal(vrbo.getCacheKey("9999"), "paw_cache_9999");
 
     const customSite = {
       id: "airbnb",
-      getCacheKey: (id) => `vrbow_cache_airbnb_${id}`,
+      getCacheKey: (id) => `paw_cache_airbnb_${id}`,
     };
-    assert.equal(siteRegistry.getCacheKey(customSite, "555"), "vrbow_cache_airbnb_555");
+    assert.equal(siteRegistry.getCacheKey(customSite, "555"), "paw_cache_airbnb_555");
   });
 
   test("parseListingData delegates to site adapter or VDPExtract", () => {
@@ -535,7 +535,7 @@ describe("site-registry: site adapter capabilities & DOM selectors", () => {
       },
       getCanonicalFetchUrl: (u) => u,
       decorateFetchUrl: (u) => u,
-      getCacheKey: (id) => `vrbow_cache_airbnb_${id}`,
+      getCacheKey: (id) => `paw_cache_airbnb_${id}`,
       parseListingData: (html, url, propId) => {
         const data = JSON.parse(html);
         return {
@@ -571,7 +571,7 @@ describe("site-registry: site adapter capabilities & DOM selectors", () => {
 
       await queue.setCached("room999", policyData, { targetUrl: "https://www.airbnb.com/rooms/room999" });
       assert.ok(
-        mockStorage.store["vrbow_cache_airbnb_room999"],
+        mockStorage.store["paw_cache_airbnb_room999"],
         "queue engine must write under site-scoped cache key"
       );
 
@@ -597,7 +597,7 @@ describe("site-registry: site adapter capabilities & DOM selectors", () => {
 
       // Verify it was stored with the site's cache key
       assert.ok(
-        mockStorage.store["vrbow_cache_airbnb_room888"],
+        mockStorage.store["paw_cache_airbnb_room888"],
         "dispatched item was cached under airbnb-scoped key"
       );
 

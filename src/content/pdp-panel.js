@@ -911,7 +911,7 @@
       const canonicalPolicy = typeof VDPExtract?.normalizePolicy === "function"
         ? VDPExtract.normalizePolicy(rawPolicy, propId, "listing-page")
         : rawPolicy;
-      safeStorageSet({ vdpLastPolicy: canonicalPolicy, vdpLastUrl: startUrl });
+      safeStorageSet({ pawLastPolicy: canonicalPolicy, pawLastUrl: startUrl });
       renderPanel(canonicalPolicy);
       onPolicy({ policy: canonicalPolicy, url: startUrl });
     } finally {

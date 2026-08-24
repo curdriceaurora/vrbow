@@ -506,7 +506,7 @@ async function checkListing(port, url, settleMs) {
     const panel = JSON.parse(panelRes.result.value);
 
     const mainRes = await cdp.send("Runtime.evaluate", {
-      expression: `JSON.stringify({ bridgeRan: !!window.__vdpBridgeRan, bridgeDataIsNull: window.__vdpBridgeData === null, bridgeItems: window.__vdpBridgeData?.items?.length ?? 0, policyLeaked: !!window.__vdpLastPolicy })`,
+      expression: `JSON.stringify({ bridgeRan: !!window.__vdpBridgeRan, bridgeDataIsNull: window.__vdpBridgeData === null, bridgeItems: window.__vdpBridgeData?.items?.length ?? 0, policyLeaked: !!window.__pawLastPolicy })`,
       returnByValue: true,
     });
     const main = JSON.parse(mainRes.result.value);
