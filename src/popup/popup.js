@@ -129,9 +129,9 @@ function loadPolicy() {
       if (chrome.runtime.lastError || !resp || !resp.policy) {
         // Content script may not have responded yet (e.g. page still
         // loading) — fall back to the last result it cached to storage.
-        chrome.storage?.local?.get?.(["vdpLastPolicy", "vdpLastUrl"], (data) => {
-          if (data && data.vdpLastUrl === tab.url && data.vdpLastPolicy) {
-            renderPolicy(data.vdpLastPolicy);
+        chrome.storage?.local?.get?.(["pawLastPolicy", "pawLastUrl"], (data) => {
+          if (data && data.pawLastUrl === tab.url && data.pawLastPolicy) {
+            renderPolicy(data.pawLastPolicy);
           } else {
             renderPolicy(null);
           }
@@ -164,12 +164,12 @@ loadPolicy();
 const toggleSearchBadging = document.getElementById("toggle-search-badging");
 if (toggleSearchBadging && chrome.storage && chrome.storage.local) {
   // Search enrichment is opt-in because it fetches individual listings.
-  chrome.storage.local.get(["vrbow_enable_search_badging"], (data) => {
-    toggleSearchBadging.checked = data?.vrbow_enable_search_badging === true;
+  chrome.storage.local.get(["paw_enable_search_badging"], (data) => {
+    toggleSearchBadging.checked = data?.paw_enable_search_badging === true;
   });
 
   // Save state on change
   toggleSearchBadging.addEventListener("change", (e) => {
-    chrome.storage.local.set({ vrbow_enable_search_badging: e.target.checked });
+    chrome.storage.local.set({ paw_enable_search_badging: e.target.checked });
   });
 }

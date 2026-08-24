@@ -136,7 +136,7 @@
     getPropertyId: expediaGetPropertyId,
     getCanonicalFetchUrl: expediaGetCanonicalFetchUrl,
     decorateFetchUrl: expediaDecorateFetchUrl,
-    getCacheKey: (propertyId) => `vrbow_cache_expedia_${propertyId}`,
+    getCacheKey: (propertyId) => `paw_cache_expedia_${propertyId}`,
     getPdpStructuredPayload: expediaGetPdpStructuredPayload,
   };
 

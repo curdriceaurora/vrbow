@@ -203,7 +203,7 @@
     getPropertyId: vrboGetPropertyId,
     getCanonicalFetchUrl: vrboGetCanonicalFetchUrl,
     decorateFetchUrl: vrboDecorateFetchUrl,
-    getCacheKey: (propertyId) => `vrbow_cache_${propertyId}`,
+    getCacheKey: (propertyId) => `paw_cache_${propertyId}`,
     parseListingData: vrboParseListingData,
     searchCardSelector: DEFAULT_SEARCH_CARD_SELECTOR,
     cardContentSelector: DEFAULT_CARD_CONTENT_SELECTORS,
@@ -323,7 +323,7 @@
     if (site && typeof site.getCacheKey === "function") {
       return site.getCacheKey(propertyId);
     }
-    return `vrbow_cache_${propertyId}`;
+    return `paw_cache_${propertyId}`;
   }
 
   // Two call shapes are supported: (urlOrSite, html, propertyId, canonicalId)

@@ -143,9 +143,9 @@ test("8.2.4: exercises and reports browser-path coverage for production content.
           storage: {
             local: {
               store: {
-                "vrbow_enable_search_badging": true,
-                "vrbow_cache_old": { cacheVersion: 1, expiresAt: Date.now() - 10000 },
-                "vrbow_cache_100001": {
+                "paw_enable_search_badging": true,
+                "paw_cache_old": { cacheVersion: 1, expiresAt: Date.now() - 10000 },
+                "paw_cache_100001": {
                   cacheVersion: 1,
                   propertyId: "100001",
                   expiresAt: Date.now() + 100000,
@@ -373,8 +373,8 @@ test("8.2.4: exercises and reports browser-path coverage for production content.
               local: {
                 get(keys, cb) {
                   cb({
-                    vdpLastUrl: "https://www.vrbo.com/123456",
-                    vdpLastPolicy: ${JSON.stringify(policyResponse?.policy || null)}
+                    pawLastUrl: "https://www.vrbo.com/123456",
+                    pawLastPolicy: ${JSON.stringify(policyResponse?.policy || null)}
                   });
                 },
                 set(k, cb) { cb && cb(); }

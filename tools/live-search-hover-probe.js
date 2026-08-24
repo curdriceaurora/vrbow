@@ -45,7 +45,7 @@ async function runLiveSearchHover() {
   // 2. Enable search badging setting
   await page.evaluate(() => {
     if (globalThis.chrome?.storage?.local) {
-      globalThis.chrome.storage.local.set({ vrbow_enable_search_badging: true });
+      globalThis.chrome.storage.local.set({ paw_enable_search_badging: true });
     }
   });
 

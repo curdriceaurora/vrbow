@@ -353,7 +353,7 @@
     getPropertyId: airbnbGetPropertyId,
     getCanonicalFetchUrl: airbnbGetCanonicalFetchUrl,
     decorateFetchUrl: airbnbDecorateFetchUrl,
-    getCacheKey: (propertyId) => `vrbow_cache_airbnb_${propertyId}`,
+    getCacheKey: (propertyId) => `paw_cache_airbnb_${propertyId}`,
     getPdpStructuredPayload: airbnbGetPdpStructuredPayload,
   };
 

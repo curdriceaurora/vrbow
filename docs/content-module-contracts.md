@@ -138,7 +138,7 @@ clears all URL-scoped harvested text, payload state, and scan state, then remove
 panel with session reset.
 
 `onPolicy({ policy, url })` fires only after a current scan renders and persists its
-policy. The controller mirrors that policy to `window.__vdpLastPolicy` for popup
+policy. The controller mirrors that policy to `window.__pawLastPolicy` for popup
 compatibility.
 
 Current ownership moved here: dialog harvesting/closing, collapsed-section

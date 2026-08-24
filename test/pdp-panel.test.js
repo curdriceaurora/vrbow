@@ -129,10 +129,10 @@ test("pdp panel scans structured and DOM policy data", async () => {
   await panel.scan(false);
   assert.ok(document.getElementById("vdp-panel"));
   assert.equal(storageWrites.length, 1);
-  assert.equal(storageWrites[0].vdpLastPolicy.maxDogs, 2);
+  assert.equal(storageWrites[0].pawLastPolicy.maxDogs, 2);
   assert.equal(policies[0].policy.maxDogs, 2);
   assert.equal(policies[0].url, location.href);
-  assert.equal(window.__vdpLastPolicy, undefined);
+  assert.equal(window.__pawLastPolicy, undefined);
 
   panel.reset();
   assert.equal(document.getElementById("vdp-panel"), null);

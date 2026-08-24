@@ -106,7 +106,7 @@ describe("airbnb adapter: URL matching and property id extraction", () => {
     assert.equal(id.length, 19);
     assert.ok(Number(id) > Number.MAX_SAFE_INTEGER, "sanity check: this id is actually past the unsafe-integer boundary");
     // The adapter's own cache key must also carry the id as a string.
-    assert.equal(airbnbSite.getCacheKey(id), `vrbow_cache_airbnb_${id}`);
+    assert.equal(airbnbSite.getCacheKey(id), `paw_cache_airbnb_${id}`);
   });
 
   test("getPropertyId returns null for non-Airbnb or non-listing URLs", () => {

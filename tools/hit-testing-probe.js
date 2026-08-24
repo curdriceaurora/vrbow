@@ -24,7 +24,7 @@ async function testHitTesting() {
   // Set the exact storage key used by content.js
   await page.evaluate(() => {
     if (globalThis.chrome?.storage?.local) {
-      globalThis.chrome.storage.local.set({ vrbow_enable_search_badging: true, searchEnrichment: true });
+      globalThis.chrome.storage.local.set({ paw_enable_search_badging: true, searchEnrichment: true });
     }
   });
 
