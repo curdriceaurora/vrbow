@@ -316,7 +316,7 @@
       return { items: filteredItems };
     } catch (e) {
       if (typeof console !== "undefined" && typeof console.warn === "function") {
-        console.warn("vrbow: failed to read Airbnb structured PDP data", e);
+        console.warn("pawcheck: failed to read Airbnb structured PDP data", e);
       }
       return null;
     }

@@ -88,7 +88,7 @@ function withActiveTab(cb) {
 function getSiteRegistry() {
   if (globalThis.PawSiteRegistry) return globalThis.PawSiteRegistry;
   if (typeof console !== "undefined" && typeof console.warn === "function") {
-    console.warn("[vrbow] PawSiteRegistry is unavailable; check script load order");
+    console.warn("[pawcheck] PawSiteRegistry is unavailable; check script load order");
   }
   return null;
 }

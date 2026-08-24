@@ -88,7 +88,7 @@ function readScript(rel) {
 
 async function startChrome(port, extensionDir, startUrl, allowEmulated = false) {
   const binary = findChrome();
-  const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), "vrbow-search-"));
+  const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), "pawcheck-search-"));
   const isTesting = /testing|chromium/i.test(binary);
   const mode = isTesting ? "extension" : "emulated";
 
