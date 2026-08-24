@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // tools/build-zip.js
-// Packages src/ into dist/pawcheck-vX.Y.Z.zip for Chrome Web Store submission.
+// Packages src/ into dist/<slug>-vX.Y.Z.zip for Chrome Web Store submission,
+// where <slug> is derived from manifest.json's own "name" field so a rename
+// only has to happen in one place.
 
 const { execFileSync } = require("node:child_process");
 const fs = require("node:fs");
@@ -17,9 +19,16 @@ function main() {
     console.error("❌ src/manifest.json has no \"version\" field.");
     process.exit(1);
   }
+  // "PawCheck: Dog Policy Callout" -> "pawcheck". Takes the part before the
+  // first colon so a descriptive suffix in "name" doesn't leak into the slug.
+  const slug = (manifest.name || "").split(":")[0].trim().toLowerCase().replace(/\s+/g, "-");
+  if (!slug) {
+    console.error("❌ src/manifest.json has no \"name\" field.");
+    process.exit(1);
+  }
 
   fs.mkdirSync(DIST_DIR, { recursive: true });
-  const zipName = `pawcheck-v${version}.zip`;
+  const zipName = `${slug}-v${version}.zip`;
   const zipPath = path.join(DIST_DIR, zipName);
 
   if (fs.existsSync(zipPath)) {
