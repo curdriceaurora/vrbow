@@ -2,6 +2,20 @@
 
 This document records all changes to **PawCheck** (formerly Vrbow).
 
+## [v1.5.1] - 2026-08-24
+
+### Bug Fixes
+- **Stale Popup Policy Across Navigation**: The controller's last-known policy is now bound to the URL it was scanned from and cleared on every navigation, so a popup message that resolves after the user has already navigated away can no longer return the previous listing's data.
+- **Search Badging Restart Race**: Guards the async read of the search-badging preference against the user having navigated away before it resolves, so a delayed storage callback can no longer restart search badges on a page the user already left.
+- **Popup Fallback Accuracy**: The popup's cached-policy fallback now expires after 24 hours and is validated against the active tab's URL before being shown, instead of trusting a same-origin cache indefinitely; expired entries are cleaned up on read. Also stops showing "No dog policy details detected" for a minimally-populated but valid allowed-policy result.
+- **Privacy Policy Accuracy**: `PRIVACY.md` described `host_permissions` as Vrbo-only; corrected to reflect the Airbnb and Expedia support live since v1.3.0, and documents the new short-lived popup-fallback cache.
+
+### Rebrand Follow-Through
+- **Complete Internal Cleanup**: A fresh case-insensitive sweep (every prior rename pass was case-sensitive and missed bare-lowercase occurrences) catches `package.json`'s package name, six production diagnostic log prefixes, and three dev-tool temp-directory prefixes still reading the old name.
+- **Legacy Storage Key Cleanup**: `performStorageMaintenance` now sweeps retired `vrbow_`/`vdpLast*` storage keys during its regular pass, including once on listing pages where a search-cache instance previously wouldn't have existed to run it.
+- **Regression Guard**: Adds `tools/check-no-legacy-monikers.js`, wired into `npm run test:all` as a fail-fast first step (also standalone as `npm run check:monikers`), so the old naming can't silently reappear.
+- **Repository Housekeeping**: Removes `docs/superpowers/`, two unrelated planning artifacts that didn't belong in this repository. Updates the GitHub repository description, which still named the extension "Vrbow."
+
 ## [v1.5.0] - 2026-08-24
 
 ### Rebrand: Vrbow → PawCheck
