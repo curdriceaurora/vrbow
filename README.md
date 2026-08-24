@@ -65,7 +65,7 @@ The extension can also add pet policy badges directly to Vrbo search results, ma
 
 ## Installation & Setup
 
-1. Download **`vrbow-v1.3.0.zip`** from [Releases](https://github.com/curdriceaurora/vrbow/releases).
+1. Download **`vrbow-v1.4.0.zip`** from [Releases](https://github.com/curdriceaurora/vrbow/releases).
 2. Unzip the file into a folder on your computer.
 3. Open `chrome://extensions` in your browser.
 4. Turn on **Developer mode** in the top-right corner.
@@ -81,6 +81,9 @@ The extension can also add pet policy badges directly to Vrbo search results, ma
 
 ## Development and Support
 
+- **Content architecture**: The browser controller delegates URL and storage lifecycle, listing-panel behavior, and Vrbo search badges to separate modules. See [Content Module Contracts](docs/content-module-contracts.md).
+- **Validation**: Run `npm run test:all` for syntax checks, Node coverage gates, and the Playwright browser suite. See the [Testing Guide](docs/testing.md).
+- **Packaging**: Run `npm run build` to create a versioned Chrome-ready archive in `dist/` from the manifest version.
 - **AI Vibecoded**: This project was built and vibecoded with AI.
 - **As-Is Software**: The extension works as intended. The author provides no guarantee of ongoing support, updates, or maintenance.
 

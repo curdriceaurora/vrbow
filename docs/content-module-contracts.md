@@ -1,10 +1,9 @@
 # Content module contracts
 
-Status: implemented migration boundary for the `content.js` split.
+Status: current runtime architecture as of v1.4.0.
 
-These contracts describe ownership and call direction. They do not change runtime
-behavior. During extraction, `content.js` remains the only module allowed to call
-more than one content module.
+These contracts describe ownership and call direction. `content.js` is the only
+module allowed to call more than one content module.
 
 ```text
 lifecycle ──events──> content.js <──results── pdp-panel
@@ -218,14 +217,13 @@ async function withMutationsSuppressed(work) {
 }
 ```
 
-The existing `module.exports.__test` facade stays during extraction only. Search tests
-move to `search-badges.js` in the immediately following migration commit; the facade
-then loses those exports. Each extracted module enters the Node coverage gate when its
-direct tests land.
+Each extracted module exposes its own Node test surface and has direct regression
+coverage. The controller's `module.exports.__test` facade contains only the
+controller behavior that still requires isolated Node tests.
 
-## Extraction acceptance checks
+## Verification and raw-file consumers
 
-Every extraction commit must update all raw-file consumers in the same commit:
+Changes to the content script stack must keep these raw-file consumers aligned:
 
 - `src/manifest.json`
 - `package.json` (`test:all` syntax checks)
@@ -237,5 +235,5 @@ Every extraction commit must update all raw-file consumers in the same commit:
 - `test/helpers/content-env-stub.js`
 - `test/theme-contract.test.js` source-file lists
 
-`node --test`, `npm run test:coverage`, and `npx playwright test` must pass after each
-phase. No compatibility facade may satisfy a browser-path or raw-file consumer.
+`npm run test:all` runs syntax checks, Node coverage gates, and Playwright. No
+compatibility facade may satisfy a browser-path or raw-file consumer.
