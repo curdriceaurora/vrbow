@@ -2,6 +2,23 @@
 
 This document records all changes to **PawCheck** (formerly Vrbow).
 
+## [v1.5.0] - 2026-08-24
+
+### Rebrand: Vrbow → PawCheck
+- **Product Rename**: Renames the extension from Vrbow to PawCheck across the manifest name/title, popup title and header, `PRIVACY.md`, and `README.md`. The GitHub repository and `vrbo.com` references are unaffected — those name the site this extension reads, not the extension itself.
+- **Internal Identifier Rename**: Renames every internal identifier tied to the old naming to a single, unified `paw`/`Paw` moniker: the `vrbow_` `chrome.storage.local` key prefix, the `globalThis.Vdp*`/`VDP*` module-wiring namespace, and the `vdp-` CSS class/DOM id/custom-event/message-type prefix used throughout the runtime. Also collapses a legacy `VDPExtract`/`VdpExtract` dual-name fallback (the lowercase form was dead code) into one canonical name. No migration for existing stored values — cached data self-heals on next fetch, and the search-badging opt-in preference resets to its default (off) once.
+- **Packaging**: `tools/build-zip.js` now derives its release zip's filename from `manifest.json`'s own `name` field instead of a hardcoded literal, so a future rename only has to happen in one place.
+
+### Search Fetcher Decomposition
+- **Focused Search Modules**: Splits `search-fetcher.js` (1359 lines) into `backoff-ladder.js` (adaptive dispatch pacing), `search-cache.js` (LRU memory cache, `chrome.storage` persistence, cooldowns, alias tracking, and policy-upgrade precedence), and `search-response-parser.js` (Apollo/HTML response parsing and listing-URL validation), with `search-fetcher.js` retained as the composing queue engine. The public `createSearchFetchQueue` API and every named export are unchanged, so no caller needed to change. See [Search Fetcher Architecture](docs/search-fetcher-architecture.md).
+
+### Bug Fixes
+- **Search Badging Default**: Fixes search-result badging being effectively enabled by default despite being documented as opt-in — a missing or unset preference now correctly resolves to disabled instead of falling through to enabled.
+
+### Documentation and Assets
+- Refreshes the README's listing-callout demo GIF and screenshot with smaller, current captures.
+- Adds direct regression coverage for the search-response-parser module's fallback branches.
+
 ## [v1.4.0] - 2026-08-23
 
 ### Content Runtime Architecture
