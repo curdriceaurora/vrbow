@@ -158,6 +158,29 @@ test("lifecycle reports ordinary storage errors without invalidating", () => {
   assert.equal(harness.events.filter(([type]) => type === "invalidate").length, 0);
 });
 
+test("lifecycle reports async storage errors and preserves callbacks", () => {
+  const harness = createHarness();
+  const warnings = [];
+  let callbackCount = 0;
+  const originalWarn = console.warn;
+  harness.chrome.runtime.lastError = { message: "quota exceeded" };
+  harness.chrome.storage.local.set = (_values, callback) => {
+    assert.equal(typeof callback, "function");
+    callback();
+  };
+  console.warn = (...args) => warnings.push(args);
+  try {
+    harness.lifecycle.storage.set({ first: true });
+    harness.lifecycle.storage.set({ second: true }, () => { callbackCount++; });
+  } finally {
+    console.warn = originalWarn;
+    delete harness.chrome.runtime.lastError;
+  }
+  assert.equal(warnings.length, 2);
+  assert.match(warnings[0][0], /storage\.set/);
+  assert.equal(callbackCount, 1);
+});
+
 test("lifecycle covers default callbacks and storage invalidation edges", () => {
   const realSetInterval = globalThis.setInterval;
   const realClearInterval = globalThis.clearInterval;

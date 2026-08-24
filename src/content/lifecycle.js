@@ -74,13 +74,24 @@
       console.warn(`vrbow: unexpected error in ${operation}`, error);
     }
 
-    function storageCall(method, args) {
+    function storageCall(method, positionalArgs, callback) {
       if (!isContextValid()) {
         invalidate();
         return;
       }
+      const wrappedCallback = (...callbackArgs) => {
+        if (!isContextValid()) {
+          invalidate();
+          return;
+        }
+        const lastError = extension.runtime?.lastError;
+        if (lastError) {
+          handleError(new Error(lastError.message || String(lastError)), `storage.${method}`);
+        }
+        callback?.(...callbackArgs);
+      };
       try {
-        extension.storage?.local?.[method]?.(...args);
+        extension.storage?.local?.[method]?.(...positionalArgs, wrappedCallback);
       } catch (error) {
         handleError(error, `storage.${method}`);
       }
@@ -88,19 +99,13 @@
 
     const storage = {
       get(keys, callback) {
-        storageCall("get", [keys, (result) => {
-          if (!isContextValid()) {
-            invalidate();
-            return;
-          }
-          callback?.(result);
-        }]);
+        storageCall("get", [keys], callback);
       },
       set(values, callback) {
-        storageCall("set", [values, callback]);
+        storageCall("set", [values], callback);
       },
       remove(keys, callback) {
-        storageCall("remove", [keys, callback]);
+        storageCall("remove", [keys], callback);
       },
     };
 
