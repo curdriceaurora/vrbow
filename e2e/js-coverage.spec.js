@@ -131,6 +131,7 @@ test("8.2.4: exercises and reports browser-path coverage for production content.
           storage: {
             local: {
               store: {
+                "vrbow_enable_search_badging": true,
                 "vrbow_cache_old": { cacheVersion: 1, expiresAt: Date.now() - 10000 },
                 "vrbow_cache_100001": {
                   cacheVersion: 1,
@@ -370,6 +371,12 @@ test("8.2.4: exercises and reports browser-path coverage for production content.
             <div class="title">🐾 Dog Policy</div>
             <button id="rescan" type="button">Rescan</button>
           </div>
+          <div class="settings">
+            <label class="toggle-label">
+              <input type="checkbox" id="toggle-search-badging" />
+              <span>Enable search listings badges</span>
+            </label>
+          </div>
           <div id="content"></div>
         </div>
         <script src="/formatters.js"></script>
@@ -593,6 +600,7 @@ test("8.2.4: exercises and reports browser-path coverage for production content.
     const p = await context.newPage();
     await p.coverage.startJSCoverage();
     await p.goto(sc.url);
+    await expect(p.locator("#toggle-search-badging")).not.toBeChecked();
     const rescanBtn = p.locator("#rescan");
     if (await rescanBtn.count() > 0) {
       await rescanBtn.click();

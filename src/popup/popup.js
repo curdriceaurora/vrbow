@@ -163,9 +163,9 @@ loadPolicy();
 // Settings Logic
 const toggleSearchBadging = document.getElementById("toggle-search-badging");
 if (toggleSearchBadging && chrome.storage && chrome.storage.local) {
-  // Load initial state (Default ON/true)
+  // Search enrichment is opt-in because it fetches individual listings.
   chrome.storage.local.get(["vrbow_enable_search_badging"], (data) => {
-    toggleSearchBadging.checked = data ? data.vrbow_enable_search_badging !== false : true;
+    toggleSearchBadging.checked = data?.vrbow_enable_search_badging === true;
   });
 
   // Save state on change

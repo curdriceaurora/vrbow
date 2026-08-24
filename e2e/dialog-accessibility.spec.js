@@ -1,5 +1,6 @@
 const path = require("node:path");
 const { chromium, expect, test } = require("@playwright/test");
+const { enableSearchBadging } = require("./extension-settings.js");
 const { installNetworkGuard } = require("./guardrail.js");
 
 const EXTENSION_ROOT = path.join(__dirname, "..", "src");
@@ -46,6 +47,7 @@ test("8.1.6: verifies dialog accessibility contract, non-modal semantics, focus-
   });
 
   try {
+    await enableSearchBadging(context);
     const pageErrors = [];
     const page = await context.newPage();
     const guard = await installNetworkGuard(context, page);

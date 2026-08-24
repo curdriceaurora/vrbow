@@ -1,5 +1,6 @@
 const path = require("node:path");
 const { chromium, expect, test } = require("@playwright/test");
+const { enableSearchBadging } = require("./extension-settings.js");
 const { installNetworkGuard } = require("./guardrail.js");
 
 const EXTENSION_ROOT = path.join(__dirname, "..", "src");
@@ -78,6 +79,7 @@ test("verifies browser hit-testing order, physical mouse coordinate hover, and c
   });
 
   try {
+    await enableSearchBadging(context);
     const pageErrors = [];
     const navigatedUrls = [];
     const page = await context.newPage();
@@ -169,6 +171,7 @@ test("verifies live-traffic guardrail aborts unrouted requests and catches viola
   });
 
   try {
+    await enableSearchBadging(context);
     const page = await context.newPage();
     const guard = await installNetworkGuard(context, page);
 
@@ -268,6 +271,7 @@ test("#18: badge spans the content column identically regardless of label, and w
   });
 
   try {
+    await enableSearchBadging(context);
     const page = await context.newPage();
     const guard = await installNetworkGuard(context, page);
 
@@ -399,6 +403,7 @@ test("#18: the slot spans every column of a grid parent and never overflows a no
   });
 
   try {
+    await enableSearchBadging(context);
     const page = await context.newPage();
     const guard = await installNetworkGuard(context, page);
 

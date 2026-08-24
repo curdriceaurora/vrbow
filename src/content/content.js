@@ -55,7 +55,7 @@
 
   function searchEnabled(callback) {
     lifecycle.storage.get(["vrbow_enable_search_badging"], (data) => {
-      callback(!data || data.vrbow_enable_search_badging !== false);
+      callback(data?.vrbow_enable_search_badging === true);
     });
   }
 
@@ -151,7 +151,7 @@
         return;
       }
       if (area !== "local" || !changes.vrbow_enable_search_badging || !isSearchUrl(location.href)) return;
-      if (changes.vrbow_enable_search_badging.newValue !== false) {
+      if (changes.vrbow_enable_search_badging.newValue === true) {
         searchBadges.start();
       } else {
         searchBadges.stop();

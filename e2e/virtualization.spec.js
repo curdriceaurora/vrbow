@@ -1,5 +1,6 @@
 const path = require("node:path");
 const { chromium, expect, test } = require("@playwright/test");
+const { enableSearchBadging } = require("./extension-settings.js");
 const { installNetworkGuard } = require("./guardrail.js");
 
 const EXTENSION_ROOT = path.join(__dirname, "..", "src");
@@ -72,6 +73,7 @@ test("8.1.5: exercises card recycling, out-of-order response isolation, and SPA 
   });
 
   try {
+    await enableSearchBadging(context);
     const pageErrors = [];
     const page = await context.newPage();
     const guard = await installNetworkGuard(context, page);
@@ -238,6 +240,7 @@ test("I3: recycling an off-screen card to a new href fires zero listing requests
   });
 
   try {
+    await enableSearchBadging(context);
     const pageErrors = [];
     const page = await context.newPage();
     const guard = await installNetworkGuard(context, page);

@@ -717,6 +717,17 @@ function badgeOf(card) { return card.querySelector(".vdp-search-badge"); }
 
 const listingUrlFor = (propId) => `https://www.vrbo.com/${propId}?chkin=2026-09-01`;
 
+test("search badging stays inactive when the preference is unset", () => {
+  installHarness();
+  __test.cleanupSearchManager();
+  storageData.clear();
+  globalThis.location.href = SEARCH_URL_A;
+
+  __test.handleNavigate({ previousUrl: null, pageKind: "search" });
+
+  assert.equal(__test.getSearchBadges().isActive(), false);
+});
+
 test("search card orchestration: recycle gate, dwell jitter, scan throttle, and nav prune", async (t) => {
   installHarness();
 
