@@ -152,7 +152,7 @@ async function inspectStressSearchUrl(ws, url, label) {
 
         // Wait up to 4s for high-priority on-hover resolution
         for (let w = 0; w < 8; w++) {
-          if (badge.dataset.vdpStatus && badge.dataset.vdpStatus !== 'loading') break;
+          if (badge.dataset.pawStatus && badge.dataset.pawStatus !== 'loading') break;
           await new Promise(r => setTimeout(r, 300));
         }
 
@@ -186,8 +186,8 @@ async function inspectStressSearchUrl(ws, url, label) {
         elapsedSinceZoomSec: elapsedSec,
         badgeText: badge ? badge.textContent.trim() : null,
         badgeClass: badge ? badge.className : null,
-        badgeStatus: badge ? (badge.dataset.vdpStatus || 'unknown') : null,
-        badgeSource: badge ? (badge.dataset.vdpSource || null) : null,
+        badgeStatus: badge ? (badge.dataset.pawStatus || 'unknown') : null,
+        badgeSource: badge ? (badge.dataset.pawSource || null) : null,
         tooltipRows,
         tooltipNotes
       });
@@ -203,8 +203,8 @@ async function inspectStressSearchUrl(ws, url, label) {
     const statusCounts = {};
     const sourceBreakdown = {};
     badges.forEach(b => {
-      const status = b.dataset.vdpStatus || 'unknown';
-      const source = b.dataset.vdpSource || 'unknown';
+      const status = b.dataset.pawStatus || 'unknown';
+      const source = b.dataset.pawSource || 'unknown';
       statusCounts[status] = (statusCounts[status] || 0) + 1;
       sourceBreakdown[source] = (sourceBreakdown[source] || 0) + 1;
     });

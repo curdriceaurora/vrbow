@@ -283,7 +283,7 @@
     const propertyIds = Array.isArray(detail.propertyIds) ? detail.propertyIds : [];
     const payload = extractFromSearchApollo(propertyIds);
     payload.requestId = detail.requestId || null;
-    window.__vdpSearchBridgeData = payload;
+    window.__pawSearchBridgeData = payload;
     window.dispatchEvent(new CustomEvent(SEARCH_DATA_EVENT, { detail: payload }));
   });
 

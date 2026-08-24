@@ -478,7 +478,7 @@ test("8.2.4: exercises and reports browser-path coverage for production content.
     const card = document.querySelector("#card-1");
     const badge = card.querySelector(".paw-search-badge");
     // Trigger capped, rate_limited, unknown, and rich allowed status rendering
-    badge.dataset.vdpStatus = "";
+    badge.dataset.pawStatus = "";
     card.dispatchEvent(new Event("mouseenter"));
     window.dispatchEvent(new CustomEvent("paw-search-apollo-data", { detail: { 100001: { petsAllowed: true } } }));
     window.dispatchEvent(new Event("paw-locationchange"));

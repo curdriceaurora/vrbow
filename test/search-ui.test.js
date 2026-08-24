@@ -906,7 +906,7 @@ test("search card orchestration: recycle gate, dwell jitter, scan throttle, and 
     await sleep(700);
 
     assert.equal(__test.getSearchQueue().getActiveCount(), 1, "request must be in flight for this test to mean anything");
-    assert.equal(badge.dataset.vdpStatus, "loading");
+    assert.equal(badge.dataset.pawStatus, "loading");
 
     card.remove();
     const pruned = __test.pruneStaleSearchCards();
@@ -928,7 +928,7 @@ test("search card orchestration: recycle gate, dwell jitter, scan throttle, and 
       "the completed in-flight request must not reach the pruned card's subscriber"
     );
     assert.equal(spies.notify.length, notifiesBefore);
-    assert.equal(badge.dataset.vdpStatus, "loading", "badge was never repainted by the stale response");
+    assert.equal(badge.dataset.pawStatus, "loading", "badge was never repainted by the stale response");
   });
 
   await t.test("a pruned card that returns to the DOM re-subscribes without issuing a new request", async () => {
@@ -944,13 +944,13 @@ test("search card orchestration: recycle gate, dwell jitter, scan throttle, and 
     // Virtualized list detaches the node, prune tears its subscription down...
     card.remove();
     assert.equal(__test.pruneStaleSearchCards(), 1);
-    assert.equal(card._vdpUnsub, null, "prune released the subscription");
+    assert.equal(card._pawUnsub, null, "prune released the subscription");
 
     // ...and then the same node, still showing the same property, comes back.
     mockDocument.body.appendChild(card);
     __test.scanSearchCards();
 
-    assert.equal(typeof card._vdpUnsub, "function", "a returning card must re-subscribe");
+    assert.equal(typeof card._pawUnsub, "function", "a returning card must re-subscribe");
     assert.ok(__test.getTrackedSearchCards().has("1000001"), "and be tracked again");
     assert.equal(spies.enqueue.length, enqueuesBefore, "re-attaching must not re-request the property");
   });
@@ -1510,7 +1510,7 @@ test("search-badges.js: direct badge and tooltip UI contract", async (t) => {
     const badge = card.querySelector(".paw-search-badge");
 
     api.updateBadgeUi(badge, { status: "capped" });
-    assert.equal(badge.dataset.vdpStatus, "capped");
+    assert.equal(badge.dataset.pawStatus, "capped");
     api.updateBadgeUi(badge, { status: "unknown" });
     api.updateBadgeUi(badge, {
       status: "ok",
@@ -1613,8 +1613,8 @@ test("search-badges.js: direct badge and tooltip UI contract", async (t) => {
     assert.ok(api.getSearchStats().depthSamplesDropped > 0);
 
     const badge = mockDocument.createElement("div");
-    badge.dataset.vdpStatus = "capped";
-    badge.dataset.vdpText = "Hover or open listing";
+    badge.dataset.pawStatus = "capped";
+    badge.dataset.pawText = "Hover or open listing";
     api.updateBadgeUi(badge, { status: "capped" });
 
     globalThis.window.innerWidth = 100;
