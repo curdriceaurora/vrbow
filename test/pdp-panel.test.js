@@ -100,14 +100,14 @@ test("pdp panel renders, responds, repositions, and removes owned DOM", () => {
   const { panel } = createPanel();
   panel.render(detailedPolicy());
 
-  const root = document.getElementById("vdp-panel");
+  const root = document.getElementById("paw-panel");
   assert.ok(root);
   assert.match(root.textContent, /Max dogs/);
-  root.querySelector(".vdp-other-toggle").click();
-  assert.ok(root.querySelector(".vdp-other-list").classList.contains("vdp-visible"));
-  root.querySelector(".vdp-jump").click();
+  root.querySelector(".paw-other-toggle").click();
+  assert.ok(root.querySelector(".paw-other-list").classList.contains("paw-visible"));
+  root.querySelector(".paw-jump").click();
 
-  const header = root.querySelector(".vdp-header");
+  const header = root.querySelector(".paw-header");
   header.dispatchEvent(new window.Event("click", { bubbles: true }));
   assert.equal(header.getAttribute("aria-expanded"), "false");
   const keyEvent = new window.Event("keydown", { bubbles: true });
@@ -117,17 +117,17 @@ test("pdp panel renders, responds, repositions, and removes owned DOM", () => {
 
   window.innerWidth = 300;
   panel.render(detailedPolicy());
-  assert.ok(document.getElementById("vdp-panel").classList.contains("vdp-collapsed"));
+  assert.ok(document.getElementById("paw-panel").classList.contains("paw-collapsed"));
 
-  root.querySelector(".vdp-close").click();
-  assert.equal(document.getElementById("vdp-panel"), null);
+  root.querySelector(".paw-close").click();
+  assert.equal(document.getElementById("paw-panel"), null);
   panel.remove(true);
 });
 
 test("pdp panel scans structured and DOM policy data", async () => {
   const { panel, storageWrites, policies } = createPanel();
   await panel.scan(false);
-  assert.ok(document.getElementById("vdp-panel"));
+  assert.ok(document.getElementById("paw-panel"));
   assert.equal(storageWrites.length, 1);
   assert.equal(storageWrites[0].pawLastPolicy.maxDogs, 2);
   assert.equal(policies[0].policy.maxDogs, 2);
@@ -135,14 +135,14 @@ test("pdp panel scans structured and DOM policy data", async () => {
   assert.equal(window.__pawLastPolicy, undefined);
 
   panel.reset();
-  assert.equal(document.getElementById("vdp-panel"), null);
+  assert.equal(document.getElementById("paw-panel"), null);
 });
 
 test("pdp panel ignores non-listing scans and collects visible pet text", async () => {
   const { panel } = createPanel({ isListing: false });
   assert.ok(panel.__test.collectDomPetSentences().length > 0);
   await panel.scan(false);
-  assert.equal(document.getElementById("vdp-panel"), null);
+  assert.equal(document.getElementById("paw-panel"), null);
 });
 
 test("pdp scan coalesces a request received while expansion is active", async () => {
@@ -164,11 +164,11 @@ test("pdp DOM helpers resolve sources, navigation targets, and dialogs", async (
   helpers.jumpToSnippet("Dogs are welcome", "House rules");
   helpers.jumpToSnippet("missing text", "Amenities");
   assert.equal(helpers.shortSourceLabel("Policies > House rules"), "House rules");
-  assert.match(helpers.row("Fee", "$25", "warn", "fee", "Fees", []), /vdp-jump/);
+  assert.match(helpers.row("Fee", "$25", "warn", "fee", "Fees", []), /paw-jump/);
   assert.ok(helpers.getStructuredPdpPayload().items.length);
 
   panel.render(detailedPolicy());
-  helpers.updatePanelPosition(document.getElementById("vdp-panel"), false);
+  helpers.updatePanelPosition(document.getElementById("paw-panel"), false);
   assert.equal(helpers.getPdpContentColumnSelector(), "main");
 
   const dialog = document.createElement("div");
@@ -223,6 +223,6 @@ test("pdp factory accepts shared globals explicitly", async () => {
   });
   panel.setApolloData(globalThis.PawSiteRegistry.getPdpStructuredPayload());
   await panel.scan(false);
-  assert.ok(document.getElementById("vdp-panel"));
+  assert.ok(document.getElementById("paw-panel"));
   panel.reset();
 });

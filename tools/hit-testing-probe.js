@@ -28,10 +28,10 @@ async function testHitTesting() {
     }
   });
 
-  console.log("Waiting for .vdp-search-badge on live search page...");
+  console.log("Waiting for .paw-search-badge on live search page...");
   try {
-    await page.waitForSelector(".vdp-search-badge", { timeout: 25000 });
-    console.log("Found .vdp-search-badge!");
+    await page.waitForSelector(".paw-search-badge", { timeout: 25000 });
+    console.log("Found .paw-search-badge!");
   } catch (e) {
     console.log("Wait timeout:", e.message);
   }
@@ -39,7 +39,7 @@ async function testHitTesting() {
   await page.waitForTimeout(4000);
 
   const hitTest = await page.evaluate(() => {
-    const b = document.querySelector(".vdp-search-badge");
+    const b = document.querySelector(".paw-search-badge");
     if (!b) return { error: "No badge found on page" };
     const rect = b.getBoundingClientRect();
     const x = rect.left + rect.width / 2;

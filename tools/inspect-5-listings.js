@@ -76,25 +76,25 @@ async function inspectSearchUrl(ws, url, label) {
   await evalCdp(ws, `window.location.href = ${JSON.stringify(url)};`);
   await sleep(6000);
 
-  // Wait for property cards to be stamped with data-vdp-prop-id
+  // Wait for property cards to be stamped with data-paw-prop-id
   let mountedCount = 0;
   for (let attempt = 1; attempt <= 20; attempt++) {
-    mountedCount = await evalCdp(ws, `document.querySelectorAll('[data-vdp-prop-id]').length`) || 0;
+    mountedCount = await evalCdp(ws, `document.querySelectorAll('[data-paw-prop-id]').length`) || 0;
     if (mountedCount >= 5) break;
     await sleep(1000);
   }
-  console.log(`Found ${mountedCount} stamped Vrbow property cards. Waiting 15s for queue...`);
+  console.log(`Found ${mountedCount} stamped PawCheck property cards. Waiting 15s for queue...`);
   await sleep(15000);
 
   // Inspect first 5 cards
   const results = await evalCdp(ws, `(async () => {
-    const cards = Array.from(document.querySelectorAll('[data-vdp-prop-id]')).slice(0, 5);
+    const cards = Array.from(document.querySelectorAll('[data-paw-prop-id]')).slice(0, 5);
     const out = [];
 
     for (let i = 0; i < cards.length; i++) {
       const card = cards[i];
-      const propId = card.getAttribute('data-vdp-prop-id');
-      const badge = card.querySelector('.vdp-search-badge');
+      const propId = card.getAttribute('data-paw-prop-id');
+      const badge = card.querySelector('.paw-search-badge');
       const link = card.querySelector('a[href*="/"]');
       let cleanUrl = null;
       if (link && link.href) {
@@ -121,18 +121,18 @@ async function inspectSearchUrl(ws, url, label) {
         // Wait for async getCached to render tooltip DOM
         await new Promise(r => setTimeout(r, 600));
 
-        const activeTooltip = document.querySelector('#vdp-search-tooltip');
+        const activeTooltip = document.querySelector('#paw-search-tooltip');
         if (activeTooltip && activeTooltip.style.display !== 'none') {
-          const rows = Array.from(activeTooltip.querySelectorAll('.vdp-tooltip-row'));
+          const rows = Array.from(activeTooltip.querySelectorAll('.paw-tooltip-row'));
           tooltipRows = rows.map(r => {
-            const lbl = r.querySelector('.vdp-tooltip-label');
-            const val = r.querySelector('.vdp-tooltip-val');
+            const lbl = r.querySelector('.paw-tooltip-label');
+            const val = r.querySelector('.paw-tooltip-val');
             return {
               label: lbl ? lbl.textContent.trim() : '',
               value: val ? val.textContent.trim() : (r.textContent.trim())
             };
           });
-          const notes = Array.from(activeTooltip.querySelectorAll('.vdp-tooltip-notes'));
+          const notes = Array.from(activeTooltip.querySelectorAll('.paw-tooltip-notes'));
           tooltipNotes = notes.map(n => n.textContent.trim());
         }
         badge.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));

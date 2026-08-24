@@ -139,7 +139,7 @@
 
   /**
    * 8.2.7 Bounded Storage Maintenance:
-   * Remove stale, expired, or incompatible Vrbow cache keys from storage.
+   * Remove stale, expired, or incompatible PawCheck cache keys from storage.
    * Sweeps only keys with the paw_cache_ prefix.
    * Records no analytics.
    */
@@ -435,7 +435,7 @@
           const cacheKey = resolveCacheKey(propertyId, targetUrl);
           storage.set({ [cacheKey]: entry }, () => {});
         } catch (e) {
-          console.warn("Vrbow failed to write cache:", e);
+          console.warn("PawCheck failed to write cache:", e);
         }
       }
 

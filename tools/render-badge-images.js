@@ -26,7 +26,7 @@ async function renderBadges() {
       margin: 0;
       padding: 40px;
       background: transparent;
-      font-family: var(--vdp-font-family);
+      font-family: var(--paw-font-family);
     }
 
     .badge-container {
@@ -37,22 +37,22 @@ async function renderBadges() {
 </head>
 <body>
   <div class="badge-container">
-    <div class="vdp-search-badge vdp-badge-allowed" id="badge-limits" tabindex="0" role="button">🐾 Max 2 dogs allowed · 50 lbs · $150/stay</div>
+    <div class="paw-search-badge paw-badge-allowed" id="badge-limits" tabindex="0" role="button">🐾 Max 2 dogs allowed · 50 lbs · $150/stay</div>
   </div>
   <div class="badge-container">
-    <div class="vdp-search-badge vdp-badge-allowed" id="badge-tiered" tabindex="0" role="button">🐾 Dogs allowed · 1st free · $25/add'l/stay</div>
+    <div class="paw-search-badge paw-badge-allowed" id="badge-tiered" tabindex="0" role="button">🐾 Dogs allowed · 1st free · $25/add'l/stay</div>
   </div>
   <div class="badge-container">
-    <div class="vdp-search-badge vdp-badge-banned" id="badge-banned" tabindex="0" role="button">🚫 Pets not allowed</div>
+    <div class="paw-search-badge paw-badge-banned" id="badge-banned" tabindex="0" role="button">🚫 Pets not allowed</div>
   </div>
   <div class="badge-container">
-    <div class="vdp-search-badge vdp-badge-loading" id="badge-loading" tabindex="0" role="button">⏳ Checking pet policy...</div>
+    <div class="paw-search-badge paw-badge-loading" id="badge-loading" tabindex="0" role="button">⏳ Checking pet policy...</div>
   </div>
   <div class="badge-container">
-    <div class="vdp-search-badge vdp-badge-restrictions" id="badge-restrictions" tabindex="0" role="button">🐾 Pet restrictions · Max 1 dog · $100/stay</div>
+    <div class="paw-search-badge paw-badge-restrictions" id="badge-restrictions" tabindex="0" role="button">🐾 Pet restrictions · Max 1 dog · $100/stay</div>
   </div>
   <div class="badge-container">
-    <div class="vdp-search-badge vdp-badge-unknown" id="badge-unknown" tabindex="0" role="button">🐾 Check pet rules on listing</div>
+    <div class="paw-search-badge paw-badge-unknown" id="badge-unknown" tabindex="0" role="button">🐾 Check pet rules on listing</div>
   </div>
 </body>
 </html>
@@ -97,7 +97,7 @@ async function renderBadges() {
     body {
       margin: 0;
       padding: 24px;
-      font-family: var(--vdp-font-family);
+      font-family: var(--paw-font-family);
       background: #f8fafc;
       display: inline-flex;
       flex-direction: column;
@@ -125,27 +125,27 @@ async function renderBadges() {
 <body>
   <div class="badge-row">
     <span class="badge-label">In-Flight / Queued</span>
-    <div class="vdp-search-badge vdp-badge-loading">⏳ Checking pet policy...</div>
+    <div class="paw-search-badge paw-badge-loading">⏳ Checking pet policy...</div>
   </div>
   <div class="badge-row">
     <span class="badge-label">Limits & Flat Fee</span>
-    <div class="vdp-search-badge vdp-badge-allowed">🐾 Max 2 dogs allowed · 50 lbs · $150/stay</div>
+    <div class="paw-search-badge paw-badge-allowed">🐾 Max 2 dogs allowed · 50 lbs · $150/stay</div>
   </div>
   <div class="badge-row">
     <span class="badge-label">Tiered Fee Structure</span>
-    <div class="vdp-search-badge vdp-badge-allowed">🐾 Dogs allowed · 1st free · $25/add'l/stay</div>
+    <div class="paw-search-badge paw-badge-allowed">🐾 Dogs allowed · 1st free · $25/add'l/stay</div>
   </div>
   <div class="badge-row">
     <span class="badge-label">Pet Restrictions Apply</span>
-    <div class="vdp-search-badge vdp-badge-restrictions">🐾 Pet restrictions · Max 1 dog · $100/stay</div>
+    <div class="paw-search-badge paw-badge-restrictions">🐾 Pet restrictions · Max 1 dog · $100/stay</div>
   </div>
   <div class="badge-row">
     <span class="badge-label">Pets Prohibited</span>
-    <div class="vdp-search-badge vdp-badge-banned">🚫 Pets not allowed</div>
+    <div class="paw-search-badge paw-badge-banned">🚫 Pets not allowed</div>
   </div>
   <div class="badge-row">
     <span class="badge-label">Fallback / Verification</span>
-    <div class="vdp-search-badge vdp-badge-unknown">🐾 Check pet rules on listing</div>
+    <div class="paw-search-badge paw-badge-unknown">🐾 Check pet rules on listing</div>
   </div>
 </body>
 </html>

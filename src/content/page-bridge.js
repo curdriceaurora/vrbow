@@ -25,11 +25,11 @@
 // `window`, since the two worlds don't share objects directly.
 
 (() => {
-  const REQUEST_EVENT = "vdp-request-apollo-data";
-  const DATA_EVENT = "vdp-apollo-data";
-  const SEARCH_REQUEST_EVENT = "vdp-search-apollo-request";
-  const SEARCH_DATA_EVENT = "vdp-search-apollo-data";
-  const NAV_EVENT = "vdp-locationchange";
+  const REQUEST_EVENT = "paw-request-apollo-data";
+  const DATA_EVENT = "paw-apollo-data";
+  const SEARCH_REQUEST_EVENT = "paw-search-apollo-request";
+  const SEARCH_DATA_EVENT = "paw-search-apollo-data";
+  const NAV_EVENT = "paw-locationchange";
 
   let lastPayloadKey = null;
   let lastResolvedApolloKey = null;

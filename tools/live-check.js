@@ -199,7 +199,7 @@ async function waitForPort(port, timeoutMs) {
 // Without the canary the second case silently took the first case's path
 // and could exit 0 — masking the defect the mode was added to detect.
 function writeCanaryExtension() {
-  const dir = path.join(os.tmpdir(), "vdp-live-check-canary");
+  const dir = path.join(os.tmpdir(), "paw-live-check-canary");
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(
     path.join(dir, "manifest.json"),
@@ -224,7 +224,7 @@ function launchChrome(port) {
   // multi-megabyte profile in tmpdir on every invocation, and reusing one
   // keeps the cache warm. Stale locks come from Chrome being left running,
   // which stopChrome() below is what actually fixes.
-  const profile = path.join(os.tmpdir(), `vdp-live-check-profile-${port}`);
+  const profile = path.join(os.tmpdir(), `paw-live-check-profile-${port}`);
   fs.mkdirSync(profile, { recursive: true });
   const child = spawn(
     findChrome(),
@@ -334,19 +334,19 @@ const readScript = (f) => fs.readFileSync(SCRIPT_PATHS[f] || path.join(ROOT, f),
 
 // Read the rendered panel out of the shared DOM.
 const PANEL_EXPR = `(() => {
-  const p = document.getElementById("vdp-panel");
+  const p = document.getElementById("paw-panel");
   if (!p) return JSON.stringify({ rendered: false });
   return JSON.stringify({
     rendered: true,
-    headline: p.querySelector(".vdp-title")?.textContent?.trim() || null,
-    rows: Array.from(p.querySelectorAll(".vdp-row-wrap")).map((w) => ({
-      label: w.querySelector(".vdp-label")?.textContent?.trim(),
-      value: w.querySelector(".vdp-value")?.textContent?.trim(),
-      hasSource: !!w.querySelector(".vdp-jump"),
-      alternates: w.querySelector(".vdp-alt")?.textContent?.trim() || null,
+    headline: p.querySelector(".paw-title")?.textContent?.trim() || null,
+    rows: Array.from(p.querySelectorAll(".paw-row-wrap")).map((w) => ({
+      label: w.querySelector(".paw-label")?.textContent?.trim(),
+      value: w.querySelector(".paw-value")?.textContent?.trim(),
+      hasSource: !!w.querySelector(".paw-jump"),
+      alternates: w.querySelector(".paw-alt")?.textContent?.trim() || null,
     })),
-    notes: Array.from(p.querySelectorAll(".vdp-other-item")).map((n) => n.textContent.trim()),
-    badge: p.querySelector(".vdp-source-badge")?.textContent?.trim() || null,
+    notes: Array.from(p.querySelectorAll(".paw-other-item")).map((n) => n.textContent.trim()),
+    badge: p.querySelector(".paw-source-badge")?.textContent?.trim() || null,
   });
 })()`;
 
@@ -481,7 +481,7 @@ async function checkListing(port, url, settleMs) {
       const { frameTree } = await cdp.send("Page.getFrameTree", {});
       const { executionContextId } = await cdp.send("Page.createIsolatedWorld", {
         frameId: frameTree.frame.id,
-        worldName: "vdp-isolated",
+        worldName: "paw-isolated",
       });
 
       // A CDP isolated world has no chrome.* APIs; a real content script

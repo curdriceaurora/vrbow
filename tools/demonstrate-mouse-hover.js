@@ -119,38 +119,38 @@ async function demonstrateMouseHover() {
       <div class="card-meta">3 bedrooms · 2 baths · Sleeps 6 · 4.92 ★</div>
       <div class="price-row">
         <div class="card-price">$265 <span>/ night</span></div>
-        <div class="vdp-search-badge vdp-badge-allowed" id="target-badge" tabindex="0" role="button" aria-haspopup="dialog">🐾 Max 2 dogs allowed · 50 lbs · $150/stay</div>
+        <div class="paw-search-badge paw-badge-allowed" id="target-badge" tabindex="0" role="button" aria-haspopup="dialog">🐾 Max 2 dogs allowed · 50 lbs · $150/stay</div>
       </div>
     </div>
   </div>
 
   <!-- Real production search tooltip markup matching content.js renderTooltipContent -->
-  <div id="vdp-search-tooltip" class="vdp-search-tooltip" role="dialog" aria-label="Dog policy" style="display: none;">
-    <div class="vdp-tooltip-header">
+  <div id="paw-search-tooltip" class="paw-search-tooltip" role="dialog" aria-label="Dog policy" style="display: none;">
+    <div class="paw-tooltip-header">
       <span>🐾 Dog policy</span>
-      <button class="vdp-tooltip-close" aria-label="Close details">×</button>
+      <button class="paw-tooltip-close" aria-label="Close details">×</button>
     </div>
-    <div class="vdp-tooltip-row">
-      <span class="vdp-tooltip-label">Dogs allowed</span>
-      <span class="vdp-tooltip-val vdp-tone-good">Yes</span>
+    <div class="paw-tooltip-row">
+      <span class="paw-tooltip-label">Dogs allowed</span>
+      <span class="paw-tooltip-val paw-tone-good">Yes</span>
     </div>
-    <div class="vdp-tooltip-row">
-      <span class="vdp-tooltip-label">Max dogs</span>
-      <span class="vdp-tooltip-val">2</span>
+    <div class="paw-tooltip-row">
+      <span class="paw-tooltip-label">Max dogs</span>
+      <span class="paw-tooltip-val">2</span>
     </div>
-    <div class="vdp-tooltip-row">
-      <span class="vdp-tooltip-label">Weight limit</span>
-      <span class="vdp-tooltip-val">50 lbs</span>
+    <div class="paw-tooltip-row">
+      <span class="paw-tooltip-label">Weight limit</span>
+      <span class="paw-tooltip-val">50 lbs</span>
     </div>
-    <div class="vdp-tooltip-row">
-      <span class="vdp-tooltip-label">Pet fee</span>
-      <span class="vdp-tooltip-val vdp-tone-warn">$150 per stay</span>
+    <div class="paw-tooltip-row">
+      <span class="paw-tooltip-label">Pet fee</span>
+      <span class="paw-tooltip-val paw-tone-warn">$150 per stay</span>
     </div>
-    <div class="vdp-tooltip-row">
-      <span class="vdp-tooltip-label">Prior approval</span>
-      <span class="vdp-tooltip-val vdp-tone-warn">Required</span>
+    <div class="paw-tooltip-row">
+      <span class="paw-tooltip-label">Prior approval</span>
+      <span class="paw-tooltip-val paw-tone-warn">Required</span>
     </div>
-    <div class="vdp-tooltip-footer">
+    <div class="paw-tooltip-footer">
       <a href="https://www.vrbo.com/12345" target="_blank" rel="noopener noreferrer">Open listing for complete rules ↗</a>
     </div>
   </div>
@@ -159,14 +159,14 @@ async function demonstrateMouseHover() {
 
   <script>
     const badge = document.getElementById("target-badge");
-    const tooltip = document.getElementById("vdp-search-tooltip");
+    const tooltip = document.getElementById("paw-search-tooltip");
     let hideTimer = null;
 
     badge.addEventListener("mouseenter", () => {
       clearTimeout(hideTimer);
       const rect = badge.getBoundingClientRect();
       tooltip.style.display = "block";
-      tooltip.classList.add("vdp-tooltip-visible");
+      tooltip.classList.add("paw-tooltip-visible");
       tooltip.style.left = Math.round(rect.left - 10) + "px";
       tooltip.style.top = Math.round(rect.top - 230) + "px";
     });
@@ -174,7 +174,7 @@ async function demonstrateMouseHover() {
     badge.addEventListener("mouseleave", (e) => {
       if (e.relatedTarget && tooltip.contains(e.relatedTarget)) return;
       hideTimer = setTimeout(() => {
-        tooltip.classList.remove("vdp-tooltip-visible");
+        tooltip.classList.remove("paw-tooltip-visible");
         tooltip.style.display = "none";
       }, 200);
     });
@@ -186,7 +186,7 @@ async function demonstrateMouseHover() {
     tooltip.addEventListener("mouseleave", (e) => {
       if (e.relatedTarget && badge.contains(e.relatedTarget)) return;
       hideTimer = setTimeout(() => {
-        tooltip.classList.remove("vdp-tooltip-visible");
+        tooltip.classList.remove("paw-tooltip-visible");
         tooltip.style.display = "none";
       }, 200);
     });
@@ -244,11 +244,11 @@ async function demonstrateMouseHover() {
   const artifactDir = "/Users/rahul/.gemini/antigravity-ide/brain/abb52108-0cc7-439d-ab2e-5603fd21d294";
   const staticTooltipDocs = path.join(docsDir, "search-tooltip-detail.png");
   const staticTooltipArtifact = path.join(artifactDir, "search-tooltip-detail.png");
-  await page.locator("#vdp-search-tooltip").screenshot({ path: staticTooltipDocs });
+  await page.locator("#paw-search-tooltip").screenshot({ path: staticTooltipDocs });
   fs.copyFileSync(staticTooltipDocs, staticTooltipArtifact);
 
   // 4. Move mouse up into the tooltip dialog
-  const linkBox = await page.locator("#vdp-search-tooltip a").boundingBox();
+  const linkBox = await page.locator("#paw-search-tooltip a").boundingBox();
   const linkTargetX = linkBox.x + linkBox.width / 2;
   const linkTargetY = linkBox.y + linkBox.height / 2;
 

@@ -170,7 +170,7 @@ describe("pdp-panel.js: sparseStateMessage (fully-sparse panel state)", () => {
     const { text, toneClass } = sparseStateMessage(true);
     assert.match(text, /^Allowed, no additional restrictions listed\./);
     assert.match(text, /Max dogs, weight limit, fee, and pre-registration weren't stated anywhere on this listing\.$/);
-    assert.equal(toneClass, " vdp-tone-good");
+    assert.equal(toneClass, " paw-tone-good");
   });
 
   test("petsAllowed === false: neutral 'weren't stated' wording, no tone class", () => {

@@ -19,35 +19,35 @@ const FILE_PATHS = {
 const read = (file) => fs.readFileSync(FILE_PATHS[file] || path.join(ROOT, file), "utf8");
 
 const REQUIRED_TOKENS = [
-  "--vdp-font-family",
-  "--vdp-color-surface",
-  "--vdp-color-surface-subtle",
-  "--vdp-color-surface-hover",
-  "--vdp-color-text",
-  "--vdp-color-text-secondary",
-  "--vdp-color-text-muted",
-  "--vdp-color-border",
-  "--vdp-color-border-subtle",
-  "--vdp-color-control-border",
-  "--vdp-color-link",
-  "--vdp-color-focus-ring",
-  "--vdp-color-highlight-ring",
-  "--vdp-policy-allowed-text",
-  "--vdp-policy-allowed-surface",
-  "--vdp-policy-warning-text",
-  "--vdp-policy-warning-surface",
-  "--vdp-policy-prohibited-text",
-  "--vdp-policy-prohibited-surface",
-  "--vdp-policy-unknown-text",
-  "--vdp-policy-unknown-surface",
-  "--vdp-policy-loading-text",
-  "--vdp-policy-loading-surface",
-  "--vdp-policy-capped-text",
-  "--vdp-policy-capped-surface",
-  "--vdp-shadow-panel"
+  "--paw-font-family",
+  "--paw-color-surface",
+  "--paw-color-surface-subtle",
+  "--paw-color-surface-hover",
+  "--paw-color-text",
+  "--paw-color-text-secondary",
+  "--paw-color-text-muted",
+  "--paw-color-border",
+  "--paw-color-border-subtle",
+  "--paw-color-control-border",
+  "--paw-color-link",
+  "--paw-color-focus-ring",
+  "--paw-color-highlight-ring",
+  "--paw-policy-allowed-text",
+  "--paw-policy-allowed-surface",
+  "--paw-policy-warning-text",
+  "--paw-policy-warning-surface",
+  "--paw-policy-prohibited-text",
+  "--paw-policy-prohibited-surface",
+  "--paw-policy-unknown-text",
+  "--paw-policy-unknown-surface",
+  "--paw-policy-loading-text",
+  "--paw-policy-loading-surface",
+  "--paw-policy-capped-text",
+  "--paw-policy-capped-surface",
+  "--paw-shadow-panel"
 ];
 
-const THEME_DEPENDENT_TOKENS = REQUIRED_TOKENS.filter((token) => token !== "--vdp-font-family");
+const THEME_DEPENDENT_TOKENS = REQUIRED_TOKENS.filter((token) => token !== "--paw-font-family");
 
 const THEME_COLOR_PAIRS = {
   light: {
@@ -107,23 +107,23 @@ test("theme assets load in the required order and remain scoped", () => {
 
   const popup = read("popup.html");
   assert.ok(popup.indexOf('href="../content/tokens.css"') < popup.indexOf('href="popup.css"'));
-  assert.match(popup, /<html class="vdp-theme-root">/);
-  assert.doesNotMatch(popup, /<body class="vdp-theme-root">/);
+  assert.match(popup, /<html class="paw-theme-root">/);
+  assert.doesNotMatch(popup, /<body class="paw-theme-root">/);
 
   const tokens = read("tokens.css");
   assert.doesNotMatch(tokens, /(^|[,{]\s*):root\b/m, "tokens must not be defined on the Vrbo document root");
-  assert.match(tokens, /:where\(#vdp-panel, \.vdp-theme-root, \.vdp-search-badge, \.vdp-search-tooltip\)/);
-  assert.match(tokens, /\.vdp-highlight\s*\{\s*--vdp-color-highlight-ring:/);
+  assert.match(tokens, /:where\(#paw-panel, \.paw-theme-root, \.paw-search-badge, \.paw-search-tooltip\)/);
+  assert.match(tokens, /\.paw-highlight\s*\{\s*--paw-color-highlight-ring:/);
 });
 
 test("loading and capped states consume their semantic tokens", () => {
   const content = read("content.css");
   const popup = read("popup.css");
   for (const state of ["loading", "capped"]) {
-    assert.match(content, new RegExp(`\\.vdp-tone-${state}[^}]+var\\(--vdp-policy-${state}-text\\)`));
-    assert.match(content, new RegExp(`\\.vdp-header\\.vdp-tone-${state}[^}]+var\\(--vdp-policy-${state}-surface\\)`));
-    assert.match(popup, new RegExp(`\\.tone-${state}[^}]+var\\(--vdp-policy-${state}-text\\)`));
-    assert.match(popup, new RegExp(`\\.status-tone\\.tone-${state}[^}]+var\\(--vdp-policy-${state}-surface\\)`));
+    assert.match(content, new RegExp(`\\.paw-tone-${state}[^}]+var\\(--paw-policy-${state}-text\\)`));
+    assert.match(content, new RegExp(`\\.paw-header\\.paw-tone-${state}[^}]+var\\(--paw-policy-${state}-surface\\)`));
+    assert.match(popup, new RegExp(`\\.tone-${state}[^}]+var\\(--paw-policy-${state}-text\\)`));
+    assert.match(popup, new RegExp(`\\.status-tone\\.tone-${state}[^}]+var\\(--paw-policy-${state}-surface\\)`));
   }
 
   assert.match(read("popup.html"), /class="status-tone tone-loading">Loading…/);
@@ -167,7 +167,7 @@ test("badge boundaries and focus rings satisfy WCAG non-text and component ident
   // WCAG 2.1 SC 1.4.11 (Non-text Contrast):
   // 1. Search badges are pill-style chips identified by their filled background surface,
   //    emoji icons, and high-contrast text rather than an isolated standalone border line.
-  // 2. Focused badges receive a prominent 2px outline using --vdp-color-focus-ring,
+  // 2. Focused badges receive a prominent 2px outline using --paw-color-focus-ring,
   //    which provides >= 3:1 non-text contrast against host cards and page surfaces.
   for (const theme of ["light", "dark"]) {
     const focusPair = THEME_NON_TEXT_PAIRS[theme].focusRing;
@@ -193,10 +193,10 @@ test("component styles contain no independent color literals", () => {
   }
 });
 
-test("every referenced Vrbow token is declared", () => {
-  const declarations = new Set(Array.from(read("tokens.css").matchAll(/(--vdp-[\w-]+)\s*:/g), (match) => match[1]));
+test("every referenced PawCheck token is declared", () => {
+  const declarations = new Set(Array.from(read("tokens.css").matchAll(/(--paw-[\w-]+)\s*:/g), (match) => match[1]));
   for (const file of ["content.css", "popup.css"]) {
-    const references = Array.from(read(file).matchAll(/var\((--vdp-[\w-]+)\)/g), (match) => match[1]);
+    const references = Array.from(read(file).matchAll(/var\((--paw-[\w-]+)\)/g), (match) => match[1]);
     assert.ok(references.length > 0, `${file} must use shared tokens`);
     for (const token of references) assert.ok(declarations.has(token), `${file} references undeclared ${token}`);
   }

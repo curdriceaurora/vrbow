@@ -125,7 +125,7 @@ function loadPolicy() {
       renderUnsupportedPage();
       return;
     }
-    chrome.tabs.sendMessage(tab.id, { type: "vdp-get-policy" }, (resp) => {
+    chrome.tabs.sendMessage(tab.id, { type: "paw-get-policy" }, (resp) => {
       if (chrome.runtime.lastError || !resp || !resp.policy) {
         // Content script may not have responded yet (e.g. page still
         // loading) — fall back to the last result it cached to storage.
@@ -147,7 +147,7 @@ document.getElementById("rescan").addEventListener("click", () => {
   document.getElementById("content").innerHTML = '<p class="status-tone tone-loading">Rescanning…</p>';
   withActiveTab((tab) => {
     if (!tab) return;
-    chrome.tabs.sendMessage(tab.id, { type: "vdp-rescan" }, (resp) => {
+    chrome.tabs.sendMessage(tab.id, { type: "paw-rescan" }, (resp) => {
       if (chrome.runtime.lastError || !resp) {
         renderPolicy(null);
         return;

@@ -59,11 +59,11 @@ test.describe("Issue #44: listing panel responsive positioning", () => {
 
       await page.goto(LISTING_URL);
 
-      const panel = page.locator("#vdp-panel");
+      const panel = page.locator("#paw-panel");
       await expect(panel).toBeVisible({ timeout: 6000 });
 
-      await expect(panel).toHaveClass(/vdp-beside/);
-      await expect(panel).not.toHaveClass(/vdp-collapsed/);
+      await expect(panel).toHaveClass(/paw-beside/);
+      await expect(panel).not.toHaveClass(/paw-collapsed/);
 
       const panelBox = await panel.boundingBox();
       const renderer = page.locator('[data-stid="lodging-infosite-template-api-renderer"]');
@@ -105,18 +105,18 @@ test.describe("Issue #44: listing panel responsive positioning", () => {
 
       await page.goto(LISTING_URL);
 
-      const panel = page.locator("#vdp-panel");
+      const panel = page.locator("#paw-panel");
       await expect(panel).toBeVisible({ timeout: 6000 });
 
-      await expect(panel).not.toHaveClass(/vdp-beside/);
-      await expect(panel).toHaveClass(/vdp-collapsed/);
+      await expect(panel).not.toHaveClass(/paw-beside/);
+      await expect(panel).toHaveClass(/paw-collapsed/);
 
-      const header = panel.locator(".vdp-header");
+      const header = panel.locator(".paw-header");
       await expect(header).toHaveAttribute("aria-expanded", "false");
 
       // Click header to expand
       await header.click();
-      await expect(panel).not.toHaveClass(/vdp-collapsed/);
+      await expect(panel).not.toHaveClass(/paw-collapsed/);
       await expect(header).toHaveAttribute("aria-expanded", "true");
 
       const expandedBox = await panel.boundingBox();
@@ -125,7 +125,7 @@ test.describe("Issue #44: listing panel responsive positioning", () => {
       // Keyboard toggle with Enter
       await header.focus();
       await page.keyboard.press("Enter");
-      await expect(panel).toHaveClass(/vdp-collapsed/);
+      await expect(panel).toHaveClass(/paw-collapsed/);
       await expect(header).toHaveAttribute("aria-expanded", "false");
 
       await guard.assertNoLeakedRequests(page);
@@ -157,15 +157,15 @@ test.describe("Issue #44: listing panel responsive positioning", () => {
 
       await page.goto(LISTING_URL);
 
-      const panel = page.locator("#vdp-panel");
+      const panel = page.locator("#paw-panel");
       await expect(panel).toBeVisible({ timeout: 6000 });
-      await expect(panel).not.toHaveClass(/vdp-beside/);
-      await expect(panel).toHaveClass(/vdp-collapsed/);
+      await expect(panel).not.toHaveClass(/paw-beside/);
+      await expect(panel).toHaveClass(/paw-collapsed/);
 
       // Resize to wide (1920x1080) -> transitions to beside mode, expands automatically
       await page.setViewportSize({ width: 1920, height: 1080 });
-      await expect(panel).toHaveClass(/vdp-beside/);
-      await expect(panel).not.toHaveClass(/vdp-collapsed/);
+      await expect(panel).toHaveClass(/paw-beside/);
+      await expect(panel).not.toHaveClass(/paw-collapsed/);
 
       const panelBox = await panel.boundingBox();
       const renderer = page.locator('[data-stid="lodging-infosite-template-api-renderer"]');
@@ -174,9 +174,9 @@ test.describe("Issue #44: listing panel responsive positioning", () => {
 
       // Resize back to 1440 -> transitions to constrained mode, collapses automatically to clear gallery
       await page.setViewportSize({ width: 1440, height: 900 });
-      await expect(panel).not.toHaveClass(/vdp-beside/);
-      await expect(panel).toHaveClass(/vdp-collapsed/);
-      await expect(panel.locator(".vdp-header")).toHaveAttribute("aria-expanded", "false");
+      await expect(panel).not.toHaveClass(/paw-beside/);
+      await expect(panel).toHaveClass(/paw-collapsed/);
+      await expect(panel.locator(".paw-header")).toHaveAttribute("aria-expanded", "false");
 
       await guard.assertNoLeakedRequests(page);
     } finally {
@@ -207,23 +207,23 @@ test.describe("Issue #44: listing panel responsive positioning", () => {
 
       await page.goto(LISTING_URL);
 
-      const panel = page.locator("#vdp-panel");
+      const panel = page.locator("#paw-panel");
       await expect(panel).toBeVisible({ timeout: 6000 });
-      await expect(panel).toHaveClass(/vdp-collapsed/);
+      await expect(panel).toHaveClass(/paw-collapsed/);
 
       // User manually clicks to expand panel
-      const header = panel.locator(".vdp-header");
+      const header = panel.locator(".paw-header");
       await header.click();
-      await expect(panel).not.toHaveClass(/vdp-collapsed/);
+      await expect(panel).not.toHaveClass(/paw-collapsed/);
 
       // User triggers rescan
-      const rescanBtn = panel.locator(".vdp-rescan");
+      const rescanBtn = panel.locator(".paw-rescan");
       await rescanBtn.click();
 
       // Verify panel remains mounted and preserves expanded state
       await expect(panel).toBeVisible({ timeout: 6000 });
-      await expect(panel).not.toHaveClass(/vdp-collapsed/);
-      await expect(panel.locator(".vdp-header")).toHaveAttribute("aria-expanded", "true");
+      await expect(panel).not.toHaveClass(/paw-collapsed/);
+      await expect(panel.locator(".paw-header")).toHaveAttribute("aria-expanded", "true");
 
       await guard.assertNoLeakedRequests(page);
     } finally {
@@ -254,33 +254,33 @@ test.describe("Issue #44: listing panel responsive positioning", () => {
 
       await page.goto(LISTING_URL);
 
-      const panel = page.locator("#vdp-panel");
+      const panel = page.locator("#paw-panel");
       await expect(panel).toBeVisible({ timeout: 6000 });
-      await expect(panel).toHaveClass(/vdp-collapsed/);
+      await expect(panel).toHaveClass(/paw-collapsed/);
 
       // 1890px width -> (1890-1200)/2 = 345px margin (inside 340..350 deadband).
       // Approaching from constrained (<350px): stays constrained
       await page.setViewportSize({ width: 1890, height: 900 });
-      await expect(panel).not.toHaveClass(/vdp-beside/);
-      await expect(panel).toHaveClass(/vdp-collapsed/);
+      await expect(panel).not.toHaveClass(/paw-beside/);
+      await expect(panel).toHaveClass(/paw-collapsed/);
 
       // 1920px width -> (1920-1200)/2 = 360px margin (>=350px enter threshold).
       // Switches to beside mode
       await page.setViewportSize({ width: 1920, height: 900 });
-      await expect(panel).toHaveClass(/vdp-beside/);
-      await expect(panel).not.toHaveClass(/vdp-collapsed/);
+      await expect(panel).toHaveClass(/paw-beside/);
+      await expect(panel).not.toHaveClass(/paw-collapsed/);
 
       // Shrink back to 1890px (345px margin >= 340px exit threshold).
       // Approaching from beside: stays beside!
       await page.setViewportSize({ width: 1890, height: 900 });
-      await expect(panel).toHaveClass(/vdp-beside/);
-      await expect(panel).not.toHaveClass(/vdp-collapsed/);
+      await expect(panel).toHaveClass(/paw-beside/);
+      await expect(panel).not.toHaveClass(/paw-collapsed/);
 
       // Shrink below 340px margin -> 1870px width (335px margin < 340px).
       // Drops to constrained mode
       await page.setViewportSize({ width: 1870, height: 900 });
-      await expect(panel).not.toHaveClass(/vdp-beside/);
-      await expect(panel).toHaveClass(/vdp-collapsed/);
+      await expect(panel).not.toHaveClass(/paw-beside/);
+      await expect(panel).toHaveClass(/paw-collapsed/);
 
       await guard.assertNoLeakedRequests(page);
     } finally {

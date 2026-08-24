@@ -164,7 +164,7 @@
           try {
             cb(data);
           } catch (e) {
-            console.error("Vrbow subscriber error:", e);
+            console.error("PawCheck subscriber error:", e);
           }
         }
       }

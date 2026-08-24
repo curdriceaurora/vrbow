@@ -109,7 +109,7 @@ async function inspectStressSearchUrl(ws, url, label) {
       const zeroIdx = targetIdx - 1;
 
       // Scroll progressively until the target card is mounted
-      let cards = Array.from(document.querySelectorAll('[data-vdp-prop-id]'));
+      let cards = Array.from(document.querySelectorAll('[data-paw-prop-id]'));
       let scrollAttempts = 0;
       while (cards.length < targetIdx && scrollAttempts < 15) {
         scrollAttempts++;
@@ -118,7 +118,7 @@ async function inspectStressSearchUrl(ws, url, label) {
         const showMore = Array.from(document.querySelectorAll('button')).find(b => /show more|see more|load more/i.test(b.textContent));
         if (showMore) showMore.click();
         const prevCount = cards.length;
-        cards = Array.from(document.querySelectorAll('[data-vdp-prop-id]'));
+        cards = Array.from(document.querySelectorAll('[data-paw-prop-id]'));
         if (cards.length === prevCount && scrollAttempts > 3) break;
       }
 
@@ -139,8 +139,8 @@ async function inspectStressSearchUrl(ws, url, label) {
       card.scrollIntoView({ behavior: 'instant', block: 'center' });
       await new Promise(r => setTimeout(r, 150));
 
-      const propId = card.getAttribute('data-vdp-prop-id');
-      const badge = card.querySelector('.vdp-search-badge');
+      const propId = card.getAttribute('data-paw-prop-id');
+      const badge = card.querySelector('.paw-search-badge');
       const link = card.querySelector('a[href*="/"]');
       let cleanUrl = link && link.href ? link.href.split('?')[0] : null;
 
@@ -159,18 +159,18 @@ async function inspectStressSearchUrl(ws, url, label) {
         // Allow async tooltip DOM update to finish
         await new Promise(r => setTimeout(r, 300));
 
-        const activeTooltip = document.querySelector('#vdp-search-tooltip');
+        const activeTooltip = document.querySelector('#paw-search-tooltip');
         if (activeTooltip && activeTooltip.style.display !== 'none') {
-          const rows = Array.from(activeTooltip.querySelectorAll('.vdp-tooltip-row'));
+          const rows = Array.from(activeTooltip.querySelectorAll('.paw-tooltip-row'));
           tooltipRows = rows.map(r => {
-            const lbl = r.querySelector('.vdp-tooltip-label');
-            const val = r.querySelector('.vdp-tooltip-val');
+            const lbl = r.querySelector('.paw-tooltip-label');
+            const val = r.querySelector('.paw-tooltip-val');
             return {
               label: lbl ? lbl.textContent.trim() : '',
               value: val ? val.textContent.trim() : (r.textContent.trim())
             };
           });
-          const notes = Array.from(activeTooltip.querySelectorAll('.vdp-tooltip-notes'));
+          const notes = Array.from(activeTooltip.querySelectorAll('.paw-tooltip-notes'));
           tooltipNotes = notes.map(n => n.textContent.trim());
         }
 
@@ -199,7 +199,7 @@ async function inspectStressSearchUrl(ws, url, label) {
       totalJSHeapSizeMB: (performance.memory.totalJSHeapSize / (1024 * 1024)).toFixed(2)
     } : {};
 
-    const badges = Array.from(document.querySelectorAll('.vdp-search-badge'));
+    const badges = Array.from(document.querySelectorAll('.paw-search-badge'));
     const statusCounts = {};
     const sourceBreakdown = {};
     badges.forEach(b => {

@@ -58,7 +58,7 @@ storage.set(values, callback)
 storage.remove(keys, callback)
 ```
 
-`start()` installs URL polling, `popstate`, `vdp-locationchange`, the body mutation
+`start()` installs URL polling, `popstate`, `paw-locationchange`, the body mutation
 observer, and the extension-context checks. It emits one initial navigation event.
 It does not scan pages or mutate feature UI.
 
@@ -78,7 +78,7 @@ onInvalidate({ reason })
 ```
 
 Navigation `pageKind` is `"listing"`, `"search"`, or `"other"`. Mutation events
-carry only the search/not-search classification their consumer needs. Internal Vrbow
+carry only the search/not-search classification their consumer needs. Internal PawCheck
 mutations are filtered before `onMutate`. The lifecycle module resets the burst
 window after four seconds; the controller owns the resulting scheduling delay.
 
