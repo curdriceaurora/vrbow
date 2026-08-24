@@ -33,9 +33,8 @@ knows how they compose.
 
 ## `backoff-ladder.js`
 
-Factory: `createBackoffLadder({ baseDelayMs, highPriorityFloorMs, maxLadderStep,
-jitterRatio, errorClusterThreshold, errorClusterWindowMs, cleanWindowMs,
-pauseOnChallengeMs, randomFn })`
+Factory: `createBackoffLadder({ baseDelayMs, highPriorityFloorMs, errorClusterThreshold,
+errorClusterWindowMs, cleanWindowMs, pauseOnChallengeMs, randomFn })`
 
 Methods: `noteHardBlock()`, `noteSoftFailure()`, `noteSuccess()`,
 `computeDispatchWait(isHighPriority, now)`, `recordDispatch(isHighPriority,

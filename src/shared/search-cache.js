@@ -298,8 +298,8 @@
     }
 
     function isInCooldown(propertyId) {
-      const t = terminalCooldowns.get(propertyId);
-      return Boolean(t && Date.now() < t.expiresAt && !t.allowBypass);
+      const t = getTerminalState(propertyId);
+      return Boolean(t && !t.allowBypass);
     }
 
     async function getCached(propertyId, targetUrl) {
@@ -313,13 +313,9 @@
       }
 
       // Check terminal cooldowns (transient fast-path for non-ok terminal states)
-      const terminal = terminalCooldowns.get(targetId) || terminalCooldowns.get(propertyId);
+      const terminal = getTerminalState(targetId) || getTerminalState(propertyId);
       if (terminal) {
-        if (Date.now() < terminal.expiresAt) {
-          return terminal.data;
-        }
-        terminalCooldowns.delete(targetId);
-        terminalCooldowns.delete(propertyId);
+        return terminal.data;
       }
 
       // Check persistent storage

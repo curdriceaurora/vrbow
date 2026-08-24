@@ -23,6 +23,16 @@
   const DEFAULT_IDLE_TIMEOUT_MS = 1000; // Mandatory fallback timeout for requestIdleCallback
 
   /**
+   * Resolved lazily on every call (not captured once) so a site adapter registered
+   * after this module loads — or a test that reassigns globalThis.VdpSiteRegistry —
+   * is picked up immediately.
+   */
+  function getSiteRegistry() {
+    return (typeof globalThis !== "undefined" && globalThis.VdpSiteRegistry) ||
+      (typeof require === "function" ? require("./site-registry.js") : null);
+  }
+
+  /**
    * Search Fetch Queue Engine: dispatch ordering, concurrency, scroll gating, and
    * session budget, wired to a backoff ladder for pacing and a search cache for
    * persistence.
@@ -263,8 +273,7 @@
         let targetUrl = validated ? validated.fetchUrl : url;
 
         try {
-          const siteRegistry = (typeof globalThis !== "undefined" && globalThis.VdpSiteRegistry) ||
-            (typeof require === "function" ? require("./site-registry.js") : null);
+          const siteRegistry = getSiteRegistry();
           if (siteRegistry && typeof siteRegistry.decorateFetchUrl === "function") {
             targetUrl = siteRegistry.decorateFetchUrl(targetUrl);
           }
@@ -318,8 +327,7 @@
 
         let parsed = null;
         try {
-          const siteRegistry = (typeof globalThis !== "undefined" && globalThis.VdpSiteRegistry) ||
-            (typeof require === "function" ? require("./site-registry.js") : null);
+          const siteRegistry = getSiteRegistry();
           if (siteRegistry && typeof siteRegistry.parseListingData === "function") {
             parsed = siteRegistry.parseListingData(targetUrl, html, propertyId, canonicalId);
           } else {
@@ -558,12 +566,12 @@
       getActiveCount: () => activeRequests.size,
       getSessionCount: () => sessionRequestsCount,
       getMaxObservedConcurrency: () => maxObservedConcurrency,
-      isPaused: () => ladder.isPaused(),
-      getLadderStep: () => ladder.getLadderStep(),
+      isPaused: ladder.isPaused,
+      getLadderStep: ladder.getLadderStep,
       getEffectiveMinDelayMs: ladder.effectiveMinDelayMs,
       getHighPriorityDelayMs: ladder.hpMinDelayMs,
       isInCooldown: cache.isInCooldown,
-      getMemoryCacheSize: () => cache.getSize(),
+      getMemoryCacheSize: cache.getSize,
     };
   }
 

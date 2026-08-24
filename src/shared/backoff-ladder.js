@@ -50,8 +50,6 @@
       options.highPriorityFloorMs !== undefined ? options.highPriorityFloorMs : DEFAULT_HIGH_PRIORITY_FLOOR_MS,
       baseDelayMs
     );
-    const maxLadderStep = options.maxLadderStep !== undefined ? options.maxLadderStep : DEFAULT_MAX_LADDER_STEP;
-    const jitterRatio = options.jitterRatio !== undefined ? options.jitterRatio : DEFAULT_JITTER_RATIO;
     const errorClusterThreshold = options.errorClusterThreshold !== undefined
       ? options.errorClusterThreshold
       : DEFAULT_ERROR_CLUSTER_THRESHOLD;
@@ -82,11 +80,11 @@
     /** One-sided jitter, applied ONCE to an already-resolved wait. */
     function applyJitter(waitMs) {
       if (!(waitMs > 0)) return waitMs;
-      return waitMs + randomFn() * jitterRatio * waitMs;
+      return waitMs + randomFn() * DEFAULT_JITTER_RATIO * waitMs;
     }
 
     function bumpLadder() {
-      if (ladderStep < maxLadderStep) ladderStep++;
+      if (ladderStep < DEFAULT_MAX_LADDER_STEP) ladderStep++;
     }
 
     /**
