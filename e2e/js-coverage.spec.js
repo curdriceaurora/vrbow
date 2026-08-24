@@ -640,7 +640,7 @@ test("8.2.4: exercises and reports browser-path coverage for production content.
   console.log("8.2.4 Browser-Path JavaScript Coverage Report");
   console.log("===============================================================================");
 
-  for (const script of ["content.js", "lifecycle.js", "pdp-panel.js", "search-badges.js", "popup.js", "page-bridge.js", "airbnb-adapter.js", "expedia-adapter.js"]) {
+  for (const script of ["content.js", "lifecycle.js", "pdp-panel.js", "search-badges.js", "popup.js", "page-bridge.js", "airbnb-adapter.js", "expedia-adapter.js", "backoff-ladder.js", "search-cache.js", "search-response-parser.js"]) {
     const cov = aggregate.get(script);
     let covered = 0;
     if (cov && cov.mask) {
