@@ -246,7 +246,7 @@ test("search-fetcher request lifecycle & cancellation", async (t) => {
 // ---------------------------------------------------------------------------
 // Card orchestration harness (I3 / I4b / I7 / I8b / I9).
 //
-// content.js is a browser-coupled IIFE, so driving its card orchestration under
+// search-badges.js is browser-coupled, so driving its card orchestration under
 // `node --test` needs a platform stub: a minimal DOM, an IntersectionObserver,
 // a MutationObserver, chrome.storage, and a recording setTimeout. None of that
 // existed under test/ before this suite — the IntersectionObserver mock in
@@ -384,6 +384,10 @@ class MockNode {
       node = node.parentNode;
     }
     return null;
+  }
+  contains(target) {
+    if (!target) return false;
+    return target === this || collectDescendants(this, []).includes(target);
   }
 
   addEventListener(type, fn) {
@@ -636,7 +640,10 @@ function installHarness() {
   };
 
   storageData.set("vrbow_enable_search_badging", true);
-  __test = require("../src/content/content.js").__test;
+  const contentTest = require("../src/content/content.js").__test;
+  const panelTest = contentTest.getPanel().__test;
+  const searchTest = contentTest.getSearchBadges().__test;
+  __test = { ...contentTest, ...panelTest, ...searchTest };
   return __test;
 }
 
@@ -1290,7 +1297,7 @@ test("search card orchestration: recycle gate, dwell jitter, scan throttle, and 
 // preserving that short-circuit.
 // ---------------------------------------------------------------------------
 
-test("content.js: expandCollapsedSections keeps the TOGGLE_TEXT_RE short-circuit", async (t) => {
+test("pdp-panel.js: expandCollapsedSections keeps the TOGGLE_TEXT_RE short-circuit", async (t) => {
   installHarness();
 
   await t.test("a toggle-labeled button with aria-expanded=false outside a relevant section still expands", async () => {
@@ -1319,7 +1326,7 @@ test("content.js: expandCollapsedSections keeps the TOGGLE_TEXT_RE short-circuit
   });
 });
 
-test("content.js: rAF-batched scroll velocity tracking and settle detection (Issue #23)", async (t) => {
+test("search-badges.js: rAF-batched scroll velocity tracking and settle detection (Issue #23)", async (t) => {
   installHarness();
 
   await t.test("first scroll event establishes baseline without false-positive velocity pause", async () => {
@@ -1430,3 +1437,212 @@ test("content.js: rAF-batched scroll velocity tracking and settle detection (Iss
   });
 });
 
+test("search-badges.js: direct badge and tooltip UI contract", async (t) => {
+  const api = installHarness();
+  freshSearchPage();
+
+  await t.test("renders every tooltip terminal state and rich policy rows", () => {
+    const cases = [
+      null,
+      {
+        status: "ok",
+        policy: {
+          petsAllowed: true,
+          maxDogs: 2,
+          weightLimit: { value: 40, unit: "lb" },
+          fee: { amount: 25, currency: "USD", period: "night", perPet: true },
+          deposit: { amount: 100, currency: "USD" },
+          approvalRequired: true,
+          contradictions: { fee: true },
+        },
+      },
+      {
+        status: "ok",
+        policy: {
+          petsAllowed: null,
+          maxDogs: null,
+          weightLimit: null,
+          weightPerDog: "30 lbs",
+          fee: { tiered: true },
+          deposit: "Deposit applies",
+          restrictionsFound: true,
+          contradictions: {},
+        },
+      },
+      { status: "ok", policy: { petsAllowed: null, maxDogs: null, fee: "$50", deposit: null, preReg: true, contradictions: {} } },
+      {
+        status: "ok",
+        policy: {
+          petsAllowed: null,
+          maxDogs: null,
+          weightLimit: null,
+          fee: { amount: null, text: "Fee applies" },
+          deposit: { amount: null, text: "Deposit applies" },
+          contradictions: {},
+        },
+      },
+      { status: "ok", policy: { petsAllowed: null, maxDogs: null, weightLimit: null, fee: null, deposit: null, contradictions: {} } },
+      { status: "rate_limited" },
+      { status: "capped" },
+      { status: "error" },
+    ];
+
+    for (const data of cases) {
+      api.renderTooltipContent(data, "https://www.vrbo.com/3000003", "3000003", true);
+      assert.ok(api.getSearchTooltip().querySelector(".vdp-tooltip-footer"));
+    }
+  });
+
+  await t.test("updates, positions, opens, and dismisses a badge", async () => {
+    const card = makeCard("direct-ui", "https://www.vrbo.com/3000003");
+    api.bindSearchCard(card);
+    const badge = card.querySelector(".vdp-search-badge");
+
+    api.updateBadgeUi(badge, { status: "capped" });
+    assert.equal(badge.dataset.vdpStatus, "capped");
+    api.updateBadgeUi(badge, { status: "unknown" });
+    api.updateBadgeUi(badge, {
+      status: "ok",
+      policy: { petsAllowed: true, maxDogs: 1, weightLimit: null, fee: null, deposit: null },
+    });
+
+    api.positionTooltip(badge);
+    assert.equal(api.getSearchTooltip().getAttribute("aria-hidden"), "false");
+    api.showTooltipForBadge(badge, "3000003", "https://www.vrbo.com/3000003", true);
+    await sleep(20);
+    api.scheduleTooltipHide(0);
+    await sleep(5);
+    assert.equal(api.getSearchTooltip().getAttribute("aria-hidden"), "true");
+  });
+
+  await t.test("exercises badge and dialog keyboard handlers", async () => {
+    const card = makeCard("events-ui", "https://www.vrbo.com/3000004");
+    api.bindSearchCard(card);
+    const badge = card.querySelector(".vdp-search-badge");
+    const event = (type, extra = {}) => ({
+      type,
+      preventDefault() {},
+      stopPropagation() {},
+      relatedTarget: null,
+      ...extra,
+    });
+
+    badge.dispatchEvent(event("click"));
+    badge.dispatchEvent(event("mouseenter"));
+    badge.dispatchEvent(event("mouseleave"));
+    badge.dispatchEvent(event("focus"));
+    badge.dispatchEvent(event("blur"));
+    badge.dispatchEvent(event("keydown", { key: "Enter" }));
+    badge.dispatchEvent(event("keydown", { key: "Escape" }));
+
+    const tooltip = api.getSearchTooltip();
+    tooltip.dispatchEvent(event("mouseenter"));
+    tooltip.dispatchEvent(event("mouseleave"));
+    api.renderTooltipContent({ status: "loading" }, "/3000004", "3000004", false);
+    tooltip.dispatchEvent(event("keydown", { key: "Tab", shiftKey: false }));
+    tooltip.dispatchEvent(event("keydown", { key: "Tab", shiftKey: true }));
+    tooltip.dispatchEvent(event("keydown", { key: "Escape" }));
+    await sleep(20);
+  });
+
+  await t.test("falls back to registry URL validation", () => {
+    const validate = globalThis.VdpSearchFetcher.validateListingUrl;
+    delete globalThis.VdpSearchFetcher.validateListingUrl;
+    try {
+      assert.equal(api.getListingValidation("http://www.vrbo.com/3000003"), null);
+      assert.equal(api.getListingValidation("not a listing"), null);
+      assert.equal(api.getListingValidation("https://www.vrbo.com/3000003").propertyId, "3000003");
+      assert.equal(api.findCardListing(mockDocument.createElement("div")), null);
+      assert.equal(api.resolveBadgeContainer(mockDocument.createElement("div")).tagName, "DIV");
+    } finally {
+      globalThis.VdpSearchFetcher.validateListingUrl = validate;
+    }
+  });
+
+  await t.test("covers defensive and alternate orchestration branches", async () => {
+    const moduleApi = require("../src/content/search-badges.js");
+    const originalRegistry = globalThis.VdpSiteRegistry;
+    const originalWarn = console.warn;
+    const warnings = [];
+    delete globalThis.VdpSiteRegistry;
+    console.warn = (...args) => warnings.push(args);
+    try {
+      api.getSiteRegistry();
+    } finally {
+      globalThis.VdpSiteRegistry = originalRegistry;
+      console.warn = originalWarn;
+    }
+    assert.match(warnings[0][0], /VdpSiteRegistry is unavailable/);
+
+    const injected = moduleApi.createSearchBadges({
+      siteRegistry: {
+        getCardContentSelector: () => ".missing",
+        isSearchUrl: () => false,
+      },
+      isSearchUrl: () => false,
+      createSafeStorageWrapper: () => mockChromeStorage,
+      getSearchApolloData: () => null,
+    });
+    assert.equal(injected.isActive(), false);
+    injected.scan();
+    assert.equal(injected.__test.resolveBadgeContainer(mockDocument.createElement("section")).tagName, "SECTION");
+    injected.stop();
+
+    assert.equal(api.requestSearchApolloData(), null);
+    assert.equal(api.trySearchApolloFastPath(null), null);
+    api.enqueueSearch("missing", "https://www.vrbo.com/missing");
+
+    const detached = mockDocument.createElement("div");
+    api.trackCardPropId("detached", detached);
+    api.untrackCardPropId("detached", null);
+
+    for (let i = 0; i < 205; i++) {
+      api.sampleQueueDepth("coverage");
+    }
+    assert.ok(api.getSearchStats().depthSamplesDropped > 0);
+
+    const badge = mockDocument.createElement("div");
+    badge.dataset.vdpStatus = "capped";
+    badge.dataset.vdpText = "Hover or open listing";
+    api.updateBadgeUi(badge, { status: "capped" });
+
+    globalThis.window.innerWidth = 100;
+    globalThis.window.innerHeight = 100;
+    badge.getBoundingClientRect = () => ({ top: 80, left: 90, right: 100, bottom: 100 });
+    api.positionTooltip(badge);
+    globalThis.window.innerWidth = 1280;
+    globalThis.window.innerHeight = 900;
+
+    api.renderTooltipContent({
+      status: "ok",
+      policy: {
+        petsAllowed: null,
+        maxDogs: null,
+        weightLimit: null,
+        fee: { tiered: true, text: "$0 first dog; $20 after" },
+        deposit: { text: "Refundable deposit" },
+        contradictions: {},
+      },
+    }, "javascript:bad", "bad", false);
+    api.renderTooltipContent({
+      status: "ok",
+      policy: {
+        petsAllowed: null,
+        maxDogs: null,
+        weightLimit: null,
+        fee: { amount: 30, currency: "CAD", period: "stay", perPet: false },
+        deposit: null,
+        contradictions: {},
+      },
+    }, "/relative", "relative", false);
+
+    const staleCard = makeCard("stale-ui", "https://www.vrbo.com/3000005");
+    api.bindSearchCard(staleCard);
+    const staleBadge = staleCard.querySelector(".vdp-search-badge");
+    api.showTooltipForBadge(staleBadge, "3000005", "https://www.vrbo.com/3000005", false);
+    staleCard.remove();
+    await sleep(10);
+  });
+
+  api.cleanupSearchManager();
+});

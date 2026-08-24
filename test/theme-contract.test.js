@@ -11,6 +11,9 @@ const FILE_PATHS = {
   "popup.js": path.join(ROOT, "src", "popup", "popup.js"),
   "tokens.css": path.join(ROOT, "src", "content", "tokens.css"),
   "content.css": path.join(ROOT, "src", "content", "content.css"),
+  "lifecycle.js": path.join(ROOT, "src", "content", "lifecycle.js"),
+  "pdp-panel.js": path.join(ROOT, "src", "content", "pdp-panel.js"),
+  "search-badges.js": path.join(ROOT, "src", "content", "search-badges.js"),
   "content.js": path.join(ROOT, "src", "content", "content.js"),
 };
 const read = (file) => fs.readFileSync(FILE_PATHS[file] || path.join(ROOT, file), "utf8");
@@ -185,7 +188,7 @@ test("badge boundaries and focus rings satisfy WCAG non-text and component ident
 });
 
 test("component styles contain no independent color literals", () => {
-  for (const file of ["content.css", "popup.css", "content.js", "popup.js"]) {
+  for (const file of ["content.css", "popup.css", "lifecycle.js", "pdp-panel.js", "search-badges.js", "content.js", "popup.js"]) {
     assert.doesNotMatch(read(file), /#[0-9a-f]{3,8}\b|rgba?\s*\(/i, `${file} must consume tokens instead of defining colors`);
   }
 });

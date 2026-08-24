@@ -106,6 +106,9 @@ async function main() {
   // browser-path coverage is measured and enforced via Playwright in e2e/js-coverage.spec.js.
   // check-coverage.js specifically enforces Node module thresholds for standalone modules.
   const TARGET_NODE_MODULES = new Set([
+    "src/content/lifecycle.js",
+    "src/content/pdp-panel.js",
+    "src/content/search-badges.js",
     "src/shared/extract.js",
     "src/shared/search-fetcher.js",
     "src/shared/site-registry.js",
