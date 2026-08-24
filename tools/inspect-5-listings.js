@@ -114,7 +114,7 @@ async function inspectSearchUrl(ws, url, label) {
 
         // Wait up to 4s for resolution if badge was loading
         for (let w = 0; w < 8; w++) {
-          if (badge.dataset.vdpStatus && badge.dataset.vdpStatus !== 'loading') break;
+          if (badge.dataset.pawStatus && badge.dataset.pawStatus !== 'loading') break;
           await new Promise(r => setTimeout(r, 500));
         }
 
@@ -145,8 +145,8 @@ async function inspectSearchUrl(ws, url, label) {
         url: cleanUrl,
         badgeText: badge ? badge.textContent.trim() : null,
         badgeClass: badge ? badge.className : null,
-        badgeStatus: badge ? (badge.dataset.vdpStatus || 'unknown') : null,
-        badgeSource: badge ? (badge.dataset.vdpSource || null) : null,
+        badgeStatus: badge ? (badge.dataset.pawStatus || 'unknown') : null,
+        badgeSource: badge ? (badge.dataset.pawSource || null) : null,
         tooltipRows,
         tooltipNotes
       });

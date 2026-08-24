@@ -2,7 +2,7 @@
  *
  * Keep declarations scoped to PawCheck roots. :where() deliberately contributes
  * zero selector specificity so component rules remain easy to override inside
- * extension-owned roots. The distinctive vdp names make accidental host-page
+ * extension-owned roots. The distinctive paw names make accidental host-page
  * matches unlikely. Never add a host-owned selector to this root list.
  *
  * The content-script stylesheet is injected into Vrbo pages, so defining these

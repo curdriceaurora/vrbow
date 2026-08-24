@@ -158,7 +158,7 @@
 
   // Instrumentation for #23's gating condition. LOCAL ONLY: these are in-memory
   // counters, readable from the devtools console of this isolated world via
-  // `__vdpSearchStats()`. PRIVACY.md commits to no remote transmission of
+  // `__pawSearchStats()`. PRIVACY.md commits to no remote transmission of
   // browsing activity or analytics, so they are never written to
   // chrome.storage, never attached to a request, and never reported anywhere.
   const MAX_DEPTH_SAMPLES = 200;
@@ -315,7 +315,7 @@
           // Preliminary instant render: paint preliminary badge immediately without blocking rich listing fetch
           const card = document.querySelector(`[data-paw-prop-id="${propId}"]`);
           const badge = card?.querySelector(".paw-search-badge");
-          if (badge && badge.dataset.vdpStatus === "loading") {
+          if (badge && badge.dataset.pawStatus === "loading") {
             updateBadgeUi(badge, fast);
           }
         }
@@ -380,7 +380,7 @@
   }
 
   function initSearchManager() {
-    globalThis.__vdpSearchStats = getSearchStats;
+    globalThis.__pawSearchStats = getSearchStats;
     if (!globalThis.PawSearchFetcher) return;
     if (!searchQueue) {
       searchQueue = globalThis.PawSearchFetcher.createSearchFetchQueue({
@@ -447,16 +447,16 @@
           if (entry.isIntersecting) {
             // I3: in-view state is read by the recycle path, which must not
             // enqueue for a card the user cannot see.
-            card._vdpInView = true;
-            if (card._vdpDwellTimer) {
-              clearTimeout(card._vdpDwellTimer);
-              card._vdpDwellTimer = null;
+            card._pawInView = true;
+            if (card._pawDwellTimer) {
+              clearTimeout(card._pawDwellTimer);
+              card._pawDwellTimer = null;
             }
             // Dwell debounce: only enqueue after card remains in viewport for
             // VIEWPORT_DWELL_MS (plus this card's own jitter).
             const dwellMs = VIEWPORT_DWELL_MS + Math.random() * VIEWPORT_DWELL_JITTER_MS;
-            card._vdpDwellTimer = setTimeout(() => {
-              card._vdpDwellTimer = null;
+            card._pawDwellTimer = setTimeout(() => {
+              card._pawDwellTimer = null;
               const propId = card.getAttribute("data-paw-prop-id");
               const fetchUrl = card.getAttribute("data-paw-fetch-url") || card.getAttribute("data-paw-url");
               if (propId && fetchUrl && searchQueue && card.isConnected) {
@@ -464,11 +464,11 @@
               }
             }, dwellMs);
           } else {
-            card._vdpInView = false;
+            card._pawInView = false;
             // Scrolled out of viewport before dwell threshold: cancel background request
-            if (card._vdpDwellTimer) {
-              clearTimeout(card._vdpDwellTimer);
-              card._vdpDwellTimer = null;
+            if (card._pawDwellTimer) {
+              clearTimeout(card._pawDwellTimer);
+              card._pawDwellTimer = null;
             }
             // I8b: the timer is only half of it. Once the dwell has elapsed the
             // work lives in the queue, so a card that leaves the viewport must
@@ -541,15 +541,15 @@
     for (const b of badges) b.remove();
     const cards = document.querySelectorAll("[data-paw-prop-id]");
     for (const c of cards) {
-      if (c._vdpDwellTimer) {
-        clearTimeout(c._vdpDwellTimer);
-        c._vdpDwellTimer = null;
+      if (c._pawDwellTimer) {
+        clearTimeout(c._pawDwellTimer);
+        c._pawDwellTimer = null;
       }
-      if (c._vdpUnsub) {
-        c._vdpUnsub();
-        c._vdpUnsub = null;
+      if (c._pawUnsub) {
+        c._pawUnsub();
+        c._pawUnsub = null;
       }
-      c._vdpInView = false;
+      c._pawInView = false;
       c.removeAttribute("data-paw-prop-id");
       c.removeAttribute("data-paw-url");
       c.removeAttribute("data-paw-fetch-url");
@@ -602,18 +602,18 @@
       if (card && card.isConnected && boundId === propId) continue;
 
       // Only tear down the card's subscription when the card is still bound to
-      // THIS id. If the node was recycled to a different property, _vdpUnsub
+      // THIS id. If the node was recycled to a different property, _pawUnsub
       // belongs to the new binding and the old one was already released.
       if (card && boundId === propId) {
-        if (card._vdpUnsub) {
-          try { card._vdpUnsub(); } catch {}
-          card._vdpUnsub = null;
+        if (card._pawUnsub) {
+          try { card._pawUnsub(); } catch {}
+          card._pawUnsub = null;
         }
-        if (card._vdpDwellTimer) {
-          clearTimeout(card._vdpDwellTimer);
-          card._vdpDwellTimer = null;
+        if (card._pawDwellTimer) {
+          clearTimeout(card._pawDwellTimer);
+          card._pawDwellTimer = null;
         }
-        card._vdpInView = false;
+        card._pawInView = false;
         if (searchCardObserver) {
           try { searchCardObserver.unobserve(card); } catch {}
         }
@@ -653,10 +653,10 @@
     let badge = card.querySelector(".paw-search-badge");
 
     // Same property, same badge, subscription intact: nothing to rewire.
-    // A missing _vdpUnsub means a prune tore this card down while it was out of
+    // A missing _pawUnsub means a prune tore this card down while it was out of
     // the DOM, so fall through and re-subscribe — the propId is unchanged, so
     // the fall-through re-binds without issuing a new request.
-    if (prevId === propId && badge && card._vdpUnsub) {
+    if (prevId === propId && badge && card._pawUnsub) {
       card.setAttribute("data-paw-fetch-url", fetchUrl);
       card.setAttribute("data-paw-nav-url", navigationUrl);
       card.setAttribute("data-paw-url", fetchUrl);
@@ -666,13 +666,13 @@
     }
 
     // Clean up previous subscription and dwell timer if card was recycled
-    if (card._vdpDwellTimer) {
-      clearTimeout(card._vdpDwellTimer);
-      card._vdpDwellTimer = null;
+    if (card._pawDwellTimer) {
+      clearTimeout(card._pawDwellTimer);
+      card._pawDwellTimer = null;
     }
-    if (card._vdpUnsub) {
-      card._vdpUnsub();
-      card._vdpUnsub = null;
+    if (card._pawUnsub) {
+      card._pawUnsub();
+      card._pawUnsub = null;
     }
 
     // The property this node used to show is stale work now: withdraw its
@@ -711,8 +711,8 @@
       badge.setAttribute("aria-controls", "paw-search-tooltip");
       badge.setAttribute("aria-expanded", "false");
       badge.setAttribute("aria-label", "Checking pet policy");
-      badge.dataset.vdpStatus = "loading";
-      badge.dataset.vdpText = "Checking pet policy...";
+      badge.dataset.pawStatus = "loading";
+      badge.dataset.pawText = "Checking pet policy...";
       badge.textContent = "⏳ Checking pet policy...";
 
       const targetContainer = resolveBadgeContainer(card);
@@ -777,8 +777,8 @@
       if (activeTooltipTarget === badge || activeTooltipPropId === prevId) {
         hideTooltip();
       }
-      badge.dataset.vdpStatus = "loading";
-      badge.dataset.vdpText = "Checking pet policy...";
+      badge.dataset.pawStatus = "loading";
+      badge.dataset.pawText = "Checking pet policy...";
       badge.className = "paw-search-badge paw-badge-loading";
       badge.textContent = "⏳ Checking pet policy...";
       badge.setAttribute("aria-label", "Checking pet policy");
@@ -786,12 +786,12 @@
       // property. Enqueue only when that node is actually on screen — an
       // off-screen recycle re-binds silently and waits for the dwell gate to
       // fire when the card is scrolled into view.
-      if (card._vdpInView === true) {
+      if (card._pawInView === true) {
         enqueueSearch(propId, fetchUrl, "normal");
       }
     }
 
-    card._vdpUnsub = searchQueue?.subscribe(propId, (data) => {
+    card._pawUnsub = searchQueue?.subscribe(propId, (data) => {
       if (card.getAttribute("data-paw-prop-id") === propId && badge.isConnected) {
         updateBadgeUi(badge, data);
         // Live dialog update: if dialog is currently open for this badge, rerender in place
@@ -839,12 +839,12 @@
       };
     }
 
-    if (badge.dataset.vdpStatus === badgeInfo.statusKey && badge.dataset.vdpText === badgeInfo.text) return;
-    badge.dataset.vdpStatus = badgeInfo.statusKey;
-    badge.dataset.vdpText = badgeInfo.text;
+    if (badge.dataset.pawStatus === badgeInfo.statusKey && badge.dataset.pawText === badgeInfo.text) return;
+    badge.dataset.pawStatus = badgeInfo.statusKey;
+    badge.dataset.pawText = badgeInfo.text;
     // Report where this result came from: the search page's own Apollo
     // state (no listing fetch) or a listing-page fetch.
-    badge.dataset.vdpSource = data.status === "ok"
+    badge.dataset.pawSource = data.status === "ok"
       ? (data._source || "listing-fetch")
       : (data.status || "unknown");
     badge.className = badgeInfo.className;
@@ -864,9 +864,9 @@
   function onBadgeHover(badge, propId, fetchUrl, navUrl, isHighPriority) {
     clearTooltipLeaveTimer();
     const parentCard = badge.closest ? badge.closest("[data-paw-prop-id]") : null;
-    if (parentCard && parentCard._vdpDwellTimer) {
-      clearTimeout(parentCard._vdpDwellTimer);
-      parentCard._vdpDwellTimer = null;
+    if (parentCard && parentCard._pawDwellTimer) {
+      clearTimeout(parentCard._pawDwellTimer);
+      parentCard._pawDwellTimer = null;
     }
     if (isHighPriority && searchQueue) {
       enqueueSearch(propId, fetchUrl, "high");

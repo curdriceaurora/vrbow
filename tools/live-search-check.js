@@ -356,8 +356,8 @@ async function run() {
             cleanHref = link.href.split('?')[0];
           }
         }
-        const status = b.dataset.vdpStatus || 'unknown';
-        const source = b.dataset.vdpSource || null;
+        const status = b.dataset.pawStatus || 'unknown';
+        const source = b.dataset.pawSource || null;
         const propId = card ? card.getAttribute('data-paw-prop-id') : null;
 
         statusCounts[status] = (statusCounts[status] || 0) + 1;
@@ -410,10 +410,10 @@ async function run() {
       if (allBadges.length === 0) return { error: 'No badge found to hover' };
 
       // Select a resolved badge if available, otherwise first badge
-      const targetBadge = allBadges.find(b => ['allowed', 'banned', 'restrictions', 'capped'].includes(b.dataset.vdpStatus)) || allBadges[0];
+      const targetBadge = allBadges.find(b => ['allowed', 'banned', 'restrictions', 'capped'].includes(b.dataset.pawStatus)) || allBadges[0];
       const parentCard = targetBadge.closest('[data-paw-prop-id]');
       const expectedPropId = parentCard ? parentCard.getAttribute('data-paw-prop-id') : null;
-      const badgeStatus = targetBadge.dataset.vdpStatus || 'unknown';
+      const badgeStatus = targetBadge.dataset.pawStatus || 'unknown';
 
       // Step A: Mouse enters badge
       targetBadge.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
