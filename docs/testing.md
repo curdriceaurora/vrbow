@@ -1,7 +1,6 @@
 # Testing Guide
 
-This document describes how to test the extension.
-Testing has two parts: offline unit tests and a live browser test harness.
+This document describes the automated and live validation paths for the extension.
 
 Install the development dependencies once:
 
@@ -12,7 +11,7 @@ npx playwright install chromium
 
 ---
 
-## 1. Offline Tests
+## 1. Complete Automated Validation
 
 Run this command in your terminal:
 
@@ -20,13 +19,27 @@ Run this command in your terminal:
 npm run test:all
 ```
 
-### Details
-- Requires no external dependencies or network connection.
-- Validates JavaScript syntax for all extension files (`content.js`, `search-fetcher.js`, `extract.js`, `page-bridge.js`, and `popup.js`).
-- Executes 185 unit and integration tests against `extract.js`, `search-fetcher.js`, state-transition lifecycles, and request managers using Node's test runner.
-- Verifies rule extraction, weight limits, fees, deposits, Apollo GraphQL schema parsing, request throttling, concurrency caps, abort signals, card virtualization, focus trapping, canonical policy normalization, and local cache eviction.
+This command:
 
-## 2. Automated Theme Tests
+- Checks JavaScript syntax for the shared registry, adapters, extractors, formatters, content modules, page bridge, and popup.
+- Runs the complete Node unit and integration suite with coverage enabled.
+- Enforces at least 90% line, 75% branch, and 85% function coverage for `lifecycle.js`, `pdp-panel.js`, `search-badges.js`, the shared extraction and search modules, the site registry, and both site adapters.
+- Runs the complete Playwright browser suite with at most two workers and blocks unexpected external network traffic.
+- Verifies extraction, formatting, URL and extension lifecycle behavior, Chrome storage failures, request pacing, card recycling, async stale-result guards, focus handling, theme behavior, and browser-path JavaScript coverage.
+
+To run only the Node tests without coverage gates:
+
+```bash
+npm test
+```
+
+To run the Node coverage gates without Playwright:
+
+```bash
+npm run test:coverage
+```
+
+## 2. Playwright Browser and Theme Tests
 
 Run the complete light and dark browser matrix:
 
@@ -34,7 +47,7 @@ Run the complete light and dark browser matrix:
 npm run test:theme
 ```
 
-The theme suite covers the listing panel and toolbar popup. It verifies every policy tone, shared-token loading, host-page isolation, keyboard focus indicators, viewport containment, and WCAG AA text and non-text contrast in both color schemes. A Chromium CSS coverage gate fails if any production rule in `tokens.css`, `content.css`, or `popup.css` is not exercised; required theme-rule coverage is 100%.
+The Playwright suite includes the light and dark theme matrix, listing and search flows, Airbnb and Expedia adapter scenarios, and production JavaScript coverage. It verifies every policy tone, shared-token loading, host-page isolation, keyboard focus indicators, viewport containment, and WCAG AA text and non-text contrast in both color schemes. A Chromium CSS coverage gate fails if any production rule in `tokens.css`, `content.css`, or `popup.css` is not exercised; required theme-rule coverage is 100%.
 
 ---
 

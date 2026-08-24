@@ -2,6 +2,19 @@
 
 This document records all changes to **Vrbow**.
 
+## [v1.4.0] - 2026-08-23
+
+### Content Runtime Architecture
+- **Focused Content Modules**: Splits the listing and search runtime into `lifecycle.js`, `pdp-panel.js`, and `search-badges.js`, with `content.js` retained as the cross-module controller.
+- **Explicit Lifecycle Ownership**: Centralizes URL tracking, mutation observation, extension-context invalidation, and safe Chrome storage access in the lifecycle module.
+- **Independent UI Lifecycles**: Gives the listing panel and Vrbo search badges their own idempotent start, scan, cleanup, and async stale-result guards.
+- **Storage Failure Diagnostics**: Detects callback-based `chrome.runtime.lastError` failures, including writes made without a caller callback, while preserving existing callback behavior.
+
+### Test and Coverage Maintenance
+- **Direct Module Coverage**: Adds focused regression tests for lifecycle, listing-panel, search-badge, and shared formatter behavior.
+- **Expanded Coverage Gates**: Enforces Node coverage thresholds for all three extracted content modules and keeps browser-path coverage aligned with the manifest script order.
+- **Runtime Consumer Updates**: Updates the manifest, live harnesses, theme contracts, and browser coverage fixtures to load the split content stack.
+
 ## [v1.3.0] - 2026-08-23
 
 ### Multi-Site Listing Support
