@@ -212,10 +212,10 @@
   function tryDispatch(force) {
     const payload = extractFromApollo();
     const key = payloadKey(payload);
-    window.__vdpBridgeRan = true;
+    window.__pawBridgeRan = true;
     if (!force && key === lastPayloadKey) return payload;
     lastPayloadKey = key;
-    window.__vdpBridgeData = payload;
+    window.__pawBridgeData = payload;
     window.dispatchEvent(new CustomEvent(DATA_EVENT, { detail: payload }));
     return payload;
   }

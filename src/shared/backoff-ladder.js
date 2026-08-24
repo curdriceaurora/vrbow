@@ -8,7 +8,7 @@
   if (typeof module === "object" && module.exports) {
     module.exports = factory();
   } else {
-    root.VdpBackoffLadder = factory();
+    root.PawBackoffLadder = factory();
   }
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   "use strict";

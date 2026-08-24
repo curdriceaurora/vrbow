@@ -4,7 +4,7 @@ function el(html) {
   return t.content.firstChild;
 }
 
-const { escapeHtml, formatMoney } = globalThis.VdpFormatters;
+const { escapeHtml, formatMoney } = globalThis.PawFormatters;
 
 function renderUnsupportedPage() {
   const c = document.getElementById("content");
@@ -86,9 +86,9 @@ function withActiveTab(cb) {
 }
 
 function getSiteRegistry() {
-  if (globalThis.VdpSiteRegistry) return globalThis.VdpSiteRegistry;
+  if (globalThis.PawSiteRegistry) return globalThis.PawSiteRegistry;
   if (typeof console !== "undefined" && typeof console.warn === "function") {
-    console.warn("[vrbow] VdpSiteRegistry is unavailable; check script load order");
+    console.warn("[vrbow] PawSiteRegistry is unavailable; check script load order");
   }
   return null;
 }

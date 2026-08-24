@@ -3,11 +3,11 @@
 // Split out of content.js so the regex/parsing layer can be unit-tested
 // under Node (see test/extract.test.js). Loaded as the first content
 // script in the isolated world, where it assigns itself to globalThis;
-// content.js then calls it as `VDPExtract.*`.
+// content.js then calls it as `PawExtract.*`.
 
 (function (root, factory) {
   const api = factory();
-  root.VDPExtract = api;
+  root.PawExtract = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   // ---------- shared text helpers ----------

@@ -27,9 +27,9 @@ function installDom(url = "https://www.vrbo.com/3000003") {
       Object.assign(this, init);
     }
   };
-  globalThis.VDPExtract = extract;
-  globalThis.VdpFormatters = formatters;
-  globalThis.VdpSiteRegistry = {
+  globalThis.PawExtract = extract;
+  globalThis.PawFormatters = formatters;
+  globalThis.PawSiteRegistry = {
     getPropertyId: () => "3000003",
     isListingUrl: () => true,
     getPdpContentColumnSelector: () => "main",
@@ -50,7 +50,7 @@ function createPanel(options = {}) {
   const suppression = [];
   const policies = [];
   const panel = createPdpPanel({
-    siteRegistry: globalThis.VdpSiteRegistry,
+    siteRegistry: globalThis.PawSiteRegistry,
     getListingIdFromUrl: () => "3000003",
     isListingUrl: () => options.isListing !== false,
     looksLikeListingPage: () => options.isListing !== false,
@@ -147,7 +147,7 @@ test("pdp panel ignores non-listing scans and collects visible pet text", async 
 
 test("pdp scan coalesces a request received while expansion is active", async () => {
   const { panel, scheduled } = createPanel();
-  globalThis.VdpSiteRegistry.getPdpStructuredPayload = () => [];
+  globalThis.PawSiteRegistry.getPdpStructuredPayload = () => [];
   const first = panel.scan(true);
   await panel.scan(true);
   await first;
@@ -215,13 +215,13 @@ test("pdp factory accepts shared globals explicitly", async () => {
   delete require.cache[require.resolve("../src/content/pdp-panel.js")];
   const moduleApi = require("../src/content/pdp-panel.js");
   const panel = moduleApi.createPdpPanel({
-    siteRegistry: globalThis.VdpSiteRegistry,
+    siteRegistry: globalThis.PawSiteRegistry,
     getListingIdFromUrl: () => "3000003",
     isListingUrl: () => true,
     looksLikeListingPage: () => true,
     safeStorageSet: () => {},
   });
-  panel.setApolloData(globalThis.VdpSiteRegistry.getPdpStructuredPayload());
+  panel.setApolloData(globalThis.PawSiteRegistry.getPdpStructuredPayload());
   await panel.scan(false);
   assert.ok(document.getElementById("vdp-panel"));
   panel.reset();

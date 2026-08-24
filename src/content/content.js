@@ -1,19 +1,19 @@
 // Content-script controller: owns shared state and routes module events.
 (() => {
   function getSiteRegistry() {
-    if (globalThis.VdpSiteRegistry) return globalThis.VdpSiteRegistry;
-    console.warn("[vrbow] VdpSiteRegistry is unavailable; check script load order");
+    if (globalThis.PawSiteRegistry) return globalThis.PawSiteRegistry;
+    console.warn("[vrbow] PawSiteRegistry is unavailable; check script load order");
     return null;
   }
 
   const registry = getSiteRegistry();
-  const lifecycleApi = globalThis.VdpLifecycle || (
+  const lifecycleApi = globalThis.PawLifecycle || (
     typeof require === "function" ? require("./lifecycle.js") : null
   );
-  const panelApi = globalThis.VdpPdpPanel || (
+  const panelApi = globalThis.PawPdpPanel || (
     typeof require === "function" ? require("./pdp-panel.js") : null
   );
-  const searchApi = globalThis.VdpSearchBadges || (
+  const searchApi = globalThis.PawSearchBadges || (
     typeof require === "function" ? require("./search-badges.js") : null
   );
 

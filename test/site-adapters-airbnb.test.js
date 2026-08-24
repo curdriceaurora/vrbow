@@ -140,23 +140,23 @@ describe("airbnb adapter: URL matching and property id extraction", () => {
   });
 
   test("registering the adapter self-registers airbnbSite with the shared site registry", () => {
-    // A fresh require of both modules, with VdpSiteRegistry populated
+    // A fresh require of both modules, with PawSiteRegistry populated
     // *before* the adapter loads — mirrors manifest.json's real script
     // order (site-registry.js, then sites/airbnb/adapter.js) — is needed
     // to actually exercise the self-registration branch; the module-level
     // require at the top of this file already ran with no registry
     // present, so re-requiring from cache wouldn't re-run that branch.
     delete require.cache[require.resolve("../src/sites/airbnb/adapter.js")];
-    const savedRegistry = globalThis.VdpSiteRegistry;
+    const savedRegistry = globalThis.PawSiteRegistry;
     try {
-      globalThis.VdpSiteRegistry = require("../src/shared/site-registry.js");
+      globalThis.PawSiteRegistry = require("../src/shared/site-registry.js");
       require("../src/sites/airbnb/adapter.js");
-      const registered = globalThis.VdpSiteRegistry.getSiteForHostname("www.airbnb.com");
-      assert.ok(registered, "adapter.js did not self-register with VdpSiteRegistry on load");
+      const registered = globalThis.PawSiteRegistry.getSiteForHostname("www.airbnb.com");
+      assert.ok(registered, "adapter.js did not self-register with PawSiteRegistry on load");
       assert.equal(registered.id, "airbnb");
     } finally {
-      globalThis.VdpSiteRegistry.unregisterSite?.("airbnb");
-      globalThis.VdpSiteRegistry = savedRegistry;
+      globalThis.PawSiteRegistry.unregisterSite?.("airbnb");
+      globalThis.PawSiteRegistry = savedRegistry;
       delete require.cache[require.resolve("../src/sites/airbnb/adapter.js")];
       require("../src/sites/airbnb/adapter.js"); // restore the module-level `adapter`/`airbnbSite` bindings used by every other test in this file
     }

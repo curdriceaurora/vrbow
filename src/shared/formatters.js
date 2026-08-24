@@ -2,7 +2,7 @@
 //
 // Loaded before content.js and popup.js in their respective contexts, where
 // it assigns itself to globalThis; both scripts then call it as
-// `VdpFormatters.*`. escapeHtml was previously duplicated verbatim in both
+// `PawFormatters.*`. escapeHtml was previously duplicated verbatim in both
 // content.js and popup.js; formatMoney/CURRENCY_SYMBOLS here is popup.js's
 // formatter for already-numeric canonical policy values — it is NOT the
 // same thing as extract.js's separate formatMoney(cur, amt), which formats
@@ -12,7 +12,7 @@
 
 (function (root, factory) {
   const api = factory();
-  root.VdpFormatters = api;
+  root.PawFormatters = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   function escapeHtml(s) {

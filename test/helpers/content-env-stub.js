@@ -46,10 +46,10 @@ function installIntervalGuard() {
  * expects to already be present (mirrors manifest.json's script-load
  * order: site-registry.js, extract.js, formatters.js, then content.js).
  */
-function installVdpGlobals() {
-  globalThis.VdpSiteRegistry = require("../../src/shared/site-registry.js");
-  globalThis.VDPExtract = require("../../src/shared/extract.js");
-  globalThis.VdpFormatters = require("../../src/shared/formatters.js");
+function installPawGlobals() {
+  globalThis.PawSiteRegistry = require("../../src/shared/site-registry.js");
+  globalThis.PawExtract = require("../../src/shared/extract.js");
+  globalThis.PawFormatters = require("../../src/shared/formatters.js");
 }
 
-module.exports = { MockCustomEvent, MockEvent, installIntervalGuard, installVdpGlobals };
+module.exports = { MockCustomEvent, MockEvent, installIntervalGuard, installPawGlobals };

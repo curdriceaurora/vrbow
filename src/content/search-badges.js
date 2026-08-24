@@ -4,7 +4,7 @@
   if (typeof module !== "undefined" && module.exports) {
     module.exports = api;
   } else {
-    root.VdpSearchBadges = api;
+    root.PawSearchBadges = api;
   }
 })(globalThis, (root) => {
   function createSearchBadges(deps = {}) {
@@ -278,7 +278,7 @@
 
   function trySearchApolloFastPath(propId) {
     if (!propId) return null;
-    const fetcher = globalThis.VdpSearchFetcher;
+    const fetcher = globalThis.PawSearchFetcher;
     if (!fetcher) return null;
     discoveredSearchPropIds.add(propId);
     const payload = requestSearchApolloData();
@@ -297,7 +297,7 @@
 
     try {
       const fast = trySearchApolloFastPath(propId);
-      if (fast && globalThis.VdpSearchFetcher?.hasConcretePolicy?.(fast.policy)) {
+      if (fast && globalThis.PawSearchFetcher?.hasConcretePolicy?.(fast.policy)) {
         const isRichOrDefinitive = fast.policy.petsAllowed === false ||
           fast.policy.maxDogs !== null ||
           fast.policy.weightLimit !== null ||
@@ -347,8 +347,8 @@
   }
 
   function getListingValidation(urlStr) {
-    if (globalThis.VdpSearchFetcher?.validateListingUrl) {
-      return globalThis.VdpSearchFetcher.validateListingUrl(urlStr, location.href);
+    if (globalThis.PawSearchFetcher?.validateListingUrl) {
+      return globalThis.PawSearchFetcher.validateListingUrl(urlStr, location.href);
     }
     try {
       const u = new URL(urlStr, location.href);
@@ -381,9 +381,9 @@
 
   function initSearchManager() {
     globalThis.__vdpSearchStats = getSearchStats;
-    if (!globalThis.VdpSearchFetcher) return;
+    if (!globalThis.PawSearchFetcher) return;
     if (!searchQueue) {
-      searchQueue = globalThis.VdpSearchFetcher.createSearchFetchQueue({
+      searchQueue = globalThis.PawSearchFetcher.createSearchFetchQueue({
         storage: createSafeStorageWrapper()
       });
     }
@@ -818,7 +818,7 @@
   function updateBadgeUi(badge, data) {
     if (!badge || !data) return;
 
-    const extractLib = globalThis.VDPExtract || globalThis.VdpExtract;
+    const extractLib = globalThis.PawExtract;
     let badgeInfo = null;
 
     if (data.status === "ok" && data.policy && extractLib?.deriveSearchBadge) {

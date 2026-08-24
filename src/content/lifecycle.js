@@ -4,7 +4,7 @@
   if (typeof module !== "undefined" && module.exports) {
     module.exports = api;
   } else {
-    root.VdpLifecycle = api;
+    root.PawLifecycle = api;
   }
 })(globalThis, (root) => {
   const INTERNAL_SELECTOR = ".vdp-search-badge, .vdp-search-tooltip, .vdp-badge-slot, #vdp-panel";
