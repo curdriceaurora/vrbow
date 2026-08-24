@@ -2,7 +2,7 @@
 (function initPdpPanel(root, factory) {
   const api = factory(root);
   if (typeof module !== "undefined" && module.exports) {
-    module.exports = api;
+    module.exports = { ...api, ...api.createPdpPanel() };
   } else {
     root.VdpPdpPanel = api;
   }
@@ -11,21 +11,16 @@
     const PANEL_ID = "vdp-panel";
     const { getSentences, isPetRelated, buildCorpus, extractPolicy } = root.VDPExtract;
     const { escapeHtml } = root.VdpFormatters;
-    const getSiteRegistry = deps.getSiteRegistry || (() => root.VdpSiteRegistry || null);
+    const siteRegistry = deps.siteRegistry || deps.getSiteRegistry?.() || root.VdpSiteRegistry || null;
+    if (!siteRegistry) console.warn("[vrbow] VdpSiteRegistry is unavailable; check script load order");
+    const getSiteRegistry = () => siteRegistry;
     const getListingIdFromUrl = deps.getListingIdFromUrl || ((url) => getSiteRegistry()?.getPropertyId(url || root.location?.href) || null);
     const isListingUrl = deps.isListingUrl || ((url) => getSiteRegistry()?.isListingUrl(url || root.location?.href) || false);
     const looksLikeListingPage = deps.looksLikeListingPage || (() => isListingUrl(root.location?.href));
-    const safeStorageSet = deps.safeStorageSet || ((data) => root.chrome?.storage?.local?.set?.(data));
+    const safeStorageSet = deps.safeStorageSet || (() => {});
     const scheduleRescan = deps.scheduleRescan || (() => {});
-    const setMutationSuppressed = deps.setMutationSuppressed || (() => {});
-    const withMutationsSuppressed = deps.withMutationsSuppressed || (async (work) => {
-      setMutationSuppressed(true);
-      try {
-        return await work();
-      } finally {
-        setMutationSuppressed(false);
-      }
-    });
+    const withMutationsSuppressed = deps.withMutationsSuppressed || ((work) => work());
+    const onPolicy = deps.onPolicy || (() => {});
 
     let latestApolloPayload = null;
     let isScanning = false;
@@ -918,9 +913,9 @@
       const canonicalPolicy = typeof VDPExtract?.normalizePolicy === "function"
         ? VDPExtract.normalizePolicy(rawPolicy, propId, "listing-page")
         : rawPolicy;
-      window.__vdpLastPolicy = canonicalPolicy;
       safeStorageSet({ vdpLastPolicy: canonicalPolicy, vdpLastUrl: startUrl });
       renderPanel(canonicalPolicy);
+      onPolicy({ policy: canonicalPolicy, url: startUrl });
     } finally {
       isScanning = false;
       if (pendingRescan) {
@@ -968,6 +963,5 @@
     };
   }
 
-  const defaultInstance = createPdpPanel();
-  return { createPdpPanel, ...defaultInstance };
+  return { createPdpPanel };
 });

@@ -48,6 +48,7 @@ function createPanel(options = {}) {
   const storageWrites = [];
   const scheduled = [];
   const suppression = [];
+  const policies = [];
   const panel = createPdpPanel({
     getSiteRegistry: () => globalThis.VdpSiteRegistry,
     getListingIdFromUrl: () => "3000003",
@@ -55,9 +56,17 @@ function createPanel(options = {}) {
     looksLikeListingPage: () => options.isListing !== false,
     safeStorageSet: (data) => storageWrites.push(data),
     scheduleRescan: (delay) => scheduled.push(delay),
-    setMutationSuppressed: (value) => suppression.push(value),
+    withMutationsSuppressed: async (work) => {
+      suppression.push(true);
+      try {
+        return await work();
+      } finally {
+        suppression.push(false);
+      }
+    },
+    onPolicy: (result) => policies.push(result),
   });
-  return { panel, storageWrites, scheduled, suppression };
+  return { panel, storageWrites, scheduled, suppression, policies };
 }
 
 function detailedPolicy() {
@@ -116,12 +125,14 @@ test("pdp panel renders, responds, repositions, and removes owned DOM", () => {
 });
 
 test("pdp panel scans structured and DOM policy data", async () => {
-  const { panel, storageWrites } = createPanel();
+  const { panel, storageWrites, policies } = createPanel();
   await panel.scan(false);
   assert.ok(document.getElementById("vdp-panel"));
   assert.equal(storageWrites.length, 1);
   assert.equal(storageWrites[0].vdpLastPolicy.maxDogs, 2);
-  assert.equal(window.__vdpLastPolicy.maxDogs, 2);
+  assert.equal(policies[0].policy.maxDogs, 2);
+  assert.equal(policies[0].url, location.href);
+  assert.equal(window.__vdpLastPolicy, undefined);
 
   panel.reset();
   assert.equal(document.getElementById("vdp-panel"), null);

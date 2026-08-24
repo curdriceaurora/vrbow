@@ -40,6 +40,8 @@ createLifecycle({
   chrome,
   location,
   MutationObserver,
+  classifyUrl,
+  isSearchUrl,
   onNavigate,
   onMutate,
   onInvalidate,
@@ -72,13 +74,14 @@ Callbacks:
 
 ```js
 onNavigate({ previousUrl, url, pageKind })
-onMutate({ url, pageKind, firstSeenAt, elapsedMs })
+onMutate({ url, isSearchPage, firstSeenAt, elapsedMs })
 onInvalidate({ reason })
 ```
 
-`pageKind` is `"listing"`, `"search"`, or `"other"`. Internal Vrbow mutations are
-filtered before `onMutate`. The lifecycle module does not choose debounce delays;
-the controller owns scheduling policy.
+Navigation `pageKind` is `"listing"`, `"search"`, or `"other"`. Mutation events
+carry only the search/not-search classification their consumer needs. Internal Vrbow
+mutations are filtered before `onMutate`. The lifecycle module resets the burst
+window after four seconds; the controller owns the resulting scheduling delay.
 
 The storage wrapper preserves Chrome's callback API. Calls made after invalidation
 are ignored. An `Extension context invalidated` error triggers the same one-time
@@ -94,13 +97,12 @@ Factory:
 
 ```js
 createPdpPanel({
-  window,
-  document,
-  location,
-  extract,
-  formatters,
   siteRegistry,
-  storage,
+  getListingIdFromUrl,
+  isListingUrl,
+  looksLikeListingPage,
+  safeStorageSet,
+  scheduleRescan,
   withMutationsSuppressed,
   onPolicy,
 })
@@ -109,16 +111,16 @@ createPdpPanel({
 Methods:
 
 ```js
-scan({ force, url, apolloPayload })
+scan(force)
 render(policy)
-remove({ resetSession })
+remove(resetSession)
 reset()
+setApolloData(payload)
 ```
 
-`scan()` returns `Promise<{ status, policy? }>` where `status` is `"rendered"`,
-`"empty"`, `"stale"`, or `"busy"`. It captures `url`; after every await it verifies
-that the URL still matches before rendering or persisting. Concurrent scans preserve
-the current coalescing behavior.
+`scan()` returns a promise that resolves when the scan finishes. It captures the
+current URL; after every await it verifies that the URL still matches before rendering
+or persisting. Concurrent scans preserve the current coalescing behavior.
 
 DOM expansion runs only through:
 
@@ -150,25 +152,24 @@ Factory:
 
 ```js
 createSearchBadges({
-  window,
-  document,
-  location,
-  searchFetcher,
-  extract,
-  formatters,
   siteRegistry,
-  storage,
-  requestApolloData,
+  isSearchUrl,
+  createSafeStorageWrapper,
+  getSearchApolloData,
 })
 ```
 
 Methods:
 
 ```js
-start({ apolloPayload })
+start()
 scan()
+requestScan()
+isActive()
 prune()
 stop()
+hideTooltip()
+setApolloData(payload)
 ```
 
 `start()` is idempotent. It creates the fetch queue, observers, page listeners, and
@@ -181,8 +182,9 @@ The module owns all card and property-ID maps. A recycled card is reset to a neu
 loading state before any request for its new property ID. Async queue notifications
 must match both the bound card identity and property ID before changing UI.
 
-`requestApolloData()` synchronously returns the latest search payload supplied by the
-controller. The module does not listen for bridge events itself.
+`getSearchApolloData()` synchronously returns a search payload supplied by the
+controller when no payload has been set directly. The module does not listen for
+bridge events itself.
 
 Current ownership moved here: scroll throttling, search statistics, Apollo fast path,
 queue setup, card discovery/binding/pruning, badge rendering, tooltip behavior, and

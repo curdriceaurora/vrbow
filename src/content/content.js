@@ -1,6 +1,12 @@
 // Content-script controller: owns shared state and routes module events.
 (() => {
-  const registry = globalThis.VdpSiteRegistry;
+  function getSiteRegistry() {
+    if (globalThis.VdpSiteRegistry) return globalThis.VdpSiteRegistry;
+    console.warn("[vrbow] VdpSiteRegistry is unavailable; check script load order");
+    return null;
+  }
+
+  const registry = getSiteRegistry();
   const lifecycleApi = globalThis.VdpLifecycle || (
     typeof require === "function" ? require("./lifecycle.js") : null
   );
@@ -15,6 +21,7 @@
   let pdpPanel;
   let searchBadges;
   let rescanTimer = null;
+  let lastPolicy = null;
   let apolloDataListener = null;
   let searchApolloDataListener = null;
 
@@ -71,9 +78,9 @@
     setTimeout(() => pdpPanel.scan(false), previousUrl ? 3200 : 3500);
   }
 
-  function handleMutate({ pageKind, elapsedMs }) {
-    if (pageKind === "search") {
-      if (searchBadges.__test.getSearchQueue()) searchBadges.requestScan();
+  function handleMutate({ isSearchPage, elapsedMs }) {
+    if (isSearchPage) {
+      if (searchBadges.isActive()) searchBadges.requestScan();
       return;
     }
     scheduleRescan(elapsedMs > 4000 ? 0 : 900);
@@ -92,25 +99,29 @@
 
   lifecycle = lifecycleApi.createLifecycle({
     classifyUrl,
+    isSearchUrl,
     onNavigate: handleNavigate,
     onMutate: handleMutate,
     onInvalidate: handleInvalidate,
   });
 
-  pdpPanel = typeof module !== "undefined" && module.exports ? panelApi : panelApi.createPdpPanel({
-    getSiteRegistry: () => registry,
+  pdpPanel = panelApi.createPdpPanel({
+    siteRegistry: registry,
     getListingIdFromUrl: (url) => registry?.getPropertyId(url || location.href) || null,
     isListingUrl,
     looksLikeListingPage: () => isListingUrl(location.href),
     safeStorageSet: (data) => lifecycle.storage.set(data),
     scheduleRescan,
-    setMutationSuppressed: lifecycle.setMutationSuppressed,
     withMutationsSuppressed,
+    onPolicy: ({ policy }) => {
+      lastPolicy = policy;
+      window.__vdpLastPolicy = policy;
+    },
   });
 
-  searchBadges = typeof module !== "undefined" && module.exports ? searchApi : searchApi.createSearchBadges({
+  searchBadges = searchApi.createSearchBadges({
     createSafeStorageWrapper: () => lifecycle.storage,
-    getSiteRegistry: () => registry,
+    siteRegistry: registry,
     isSearchUrl,
   });
 
@@ -161,10 +172,10 @@
         return;
       }
       if (message?.type === "vdp-get-policy") {
-        sendResponse({ policy: window.__vdpLastPolicy || null, url: location.href });
+        sendResponse({ policy: lastPolicy, url: location.href });
       } else if (message?.type === "vdp-rescan") {
         pdpPanel.scan(true).then(() => {
-          if (lifecycle.isContextValid()) sendResponse({ policy: window.__vdpLastPolicy || null });
+          if (lifecycle.isContextValid()) sendResponse({ policy: lastPolicy });
         });
         return true;
       } else if (message?.type === "vdp-test-trigger-invalidation") {

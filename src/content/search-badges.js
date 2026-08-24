@@ -2,15 +2,17 @@
 (function initSearchBadges(root, factory) {
   const api = factory(root);
   if (typeof module !== "undefined" && module.exports) {
-    module.exports = api;
+    module.exports = { ...api, ...api.createSearchBadges() };
   } else {
     root.VdpSearchBadges = api;
   }
 })(globalThis, (root) => {
   function createSearchBadges(deps = {}) {
-    const getSiteRegistry = deps.getSiteRegistry || (() => root.VdpSiteRegistry || null);
+    const siteRegistry = deps.siteRegistry || deps.getSiteRegistry?.() || root.VdpSiteRegistry || null;
+    if (!siteRegistry) console.warn("[vrbow] VdpSiteRegistry is unavailable; check script load order");
+    const getSiteRegistry = () => siteRegistry;
     const isSearchUrl = deps.isSearchUrl || ((url) => getSiteRegistry()?.isSearchUrl(url || root.location?.href) || false);
-    const createSafeStorageWrapper = deps.createSafeStorageWrapper || (() => deps.storage || root.chrome?.storage?.local);
+    const createSafeStorageWrapper = deps.createSafeStorageWrapper || (() => deps.storage || null);
     const getSearchApolloData = deps.getSearchApolloData || (() => null);
 
   // ---------- Search Page Card Badging & Hover Tooltips ----------
@@ -1129,6 +1131,7 @@
       stop: cleanupSearchManager,
       scan: scanSearchCards,
       requestScan: requestSearchScan,
+      isActive: () => Boolean(searchQueue),
       prune: pruneStaleSearchCards,
       hideTooltip,
       setApolloData: (payload) => { latestSearchApolloData = payload; },
@@ -1169,6 +1172,5 @@
     };
   }
 
-  const defaultInstance = createSearchBadges();
-  return { createSearchBadges, ...defaultInstance };
+  return { createSearchBadges };
 });

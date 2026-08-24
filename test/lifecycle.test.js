@@ -40,6 +40,7 @@ function createHarness() {
     location,
     MutationObserver: Observer,
     classifyUrl: (url) => url.includes("search") ? "search" : "listing",
+    isSearchUrl: (url) => url.includes("search"),
     onNavigate: (event) => events.push(["navigate", event]),
     onMutate: (event) => events.push(["mutate", event]),
     onInvalidate: (event) => events.push(["invalidate", event]),
@@ -74,6 +75,7 @@ test("lifecycle owns navigation, mutation, storage, and teardown", () => {
     assert.equal(events.filter(([type]) => type === "mutate").length, 0);
     lifecycle.__test.handleMutations([{ target: {}, addedNodes: [{ closest: () => null }] }]);
     assert.equal(events.filter(([type]) => type === "mutate").length, 1);
+    assert.equal(events.find(([type]) => type === "mutate")[1].isSearchPage, true);
 
     lifecycle.setMutationSuppressed(true);
     lifecycle.setMutationSuppressed(true);
@@ -101,6 +103,22 @@ test("lifecycle owns navigation, mutation, storage, and teardown", () => {
     globalThis.setInterval = realSetInterval;
     globalThis.clearInterval = realClearInterval;
   }
+});
+
+test("lifecycle restarts the mutation burst window after the hard cap", () => {
+  const harness = createHarness();
+  const originalNow = Date.now;
+  const times = [1000, 5001, 5002];
+  Date.now = () => times.shift();
+  try {
+    harness.lifecycle.__test.handleMutations([]);
+    harness.lifecycle.__test.handleMutations([]);
+    harness.lifecycle.__test.handleMutations([]);
+  } finally {
+    Date.now = originalNow;
+  }
+  const mutations = harness.events.filter(([type]) => type === "mutate").map(([, event]) => event);
+  assert.deepEqual(mutations.map(({ elapsedMs }) => elapsedMs), [0, 4001, 0]);
 });
 
 test("lifecycle invalidates once when the extension context disappears", () => {

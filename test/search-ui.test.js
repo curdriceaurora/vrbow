@@ -641,8 +641,8 @@ function installHarness() {
 
   storageData.set("vrbow_enable_search_badging", true);
   const contentTest = require("../src/content/content.js").__test;
-  const panelTest = require("../src/content/pdp-panel.js").__test;
-  const searchTest = require("../src/content/search-badges.js").__test;
+  const panelTest = contentTest.getPanel().__test;
+  const searchTest = contentTest.getSearchBadges().__test;
   __test = { ...contentTest, ...panelTest, ...searchTest };
   return __test;
 }
@@ -1561,6 +1561,19 @@ test("search-badges.js: direct badge and tooltip UI contract", async (t) => {
 
   await t.test("covers defensive and alternate orchestration branches", async () => {
     const moduleApi = require("../src/content/search-badges.js");
+    const originalRegistry = globalThis.VdpSiteRegistry;
+    const originalWarn = console.warn;
+    const warnings = [];
+    delete globalThis.VdpSiteRegistry;
+    console.warn = (...args) => warnings.push(args);
+    try {
+      moduleApi.createSearchBadges({ getSiteRegistry: () => null });
+    } finally {
+      globalThis.VdpSiteRegistry = originalRegistry;
+      console.warn = originalWarn;
+    }
+    assert.match(warnings[0][0], /VdpSiteRegistry is unavailable/);
+
     const injected = moduleApi.createSearchBadges({
       getSiteRegistry: () => ({
         getCardContentSelector: () => ".missing",
@@ -1570,6 +1583,7 @@ test("search-badges.js: direct badge and tooltip UI contract", async (t) => {
       createSafeStorageWrapper: () => mockChromeStorage,
       getSearchApolloData: () => null,
     });
+    assert.equal(injected.isActive(), false);
     injected.scan();
     assert.equal(injected.__test.resolveBadgeContainer(mockDocument.createElement("section")).tagName, "SECTION");
     injected.stop();

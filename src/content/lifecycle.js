@@ -16,6 +16,7 @@
     const currentLocation = deps.location || root.location;
     const Observer = deps.MutationObserver || root.MutationObserver;
     const classifyUrl = deps.classifyUrl || (() => "other");
+    const isSearchUrl = deps.isSearchUrl || (() => false);
     const onNavigate = deps.onNavigate || (() => {});
     const onMutate = deps.onMutate || (() => {});
     const onInvalidate = deps.onInvalidate || (() => {});
@@ -131,11 +132,14 @@
       if (mutations?.length && mutations.every(isInternalMutation)) return;
       const now = Date.now();
       if (!mutationFirstSeenAt) mutationFirstSeenAt = now;
+      const firstSeenAt = mutationFirstSeenAt;
+      const elapsedMs = now - firstSeenAt;
+      if (elapsedMs > 4000) mutationFirstSeenAt = 0;
       onMutate({
         url: currentLocation.href,
-        pageKind: classifyUrl(currentLocation.href),
-        firstSeenAt: mutationFirstSeenAt,
-        elapsedMs: now - mutationFirstSeenAt,
+        isSearchPage: isSearchUrl(currentLocation.href),
+        firstSeenAt,
+        elapsedMs,
       });
     }
 
