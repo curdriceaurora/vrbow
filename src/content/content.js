@@ -22,6 +22,7 @@
   let searchBadges;
   let rescanTimer = null;
   let lastPolicy = null;
+  let lastPolicyUrl = null;
   let apolloDataListener = null;
   let searchApolloDataListener = null;
 
@@ -59,13 +60,33 @@
     });
   }
 
-  function handleNavigate({ previousUrl, pageKind }) {
+  function clearLastPolicy() {
+    lastPolicy = null;
+    lastPolicyUrl = null;
+    window.__pawLastPolicy = null;
+  }
+
+  function handlePolicy({ policy, url }) {
+    lastPolicy = policy;
+    lastPolicyUrl = url;
+    window.__pawLastPolicy = policy;
+  }
+
+  function getCurrentPolicy() {
+    return lastPolicyUrl === location.href ? lastPolicy : null;
+  }
+
+  function handleNavigate({ previousUrl, pageKind, url }) {
+    const navigationUrl = url || location.href;
+    clearLastPolicy();
     searchBadges.hideTooltip();
     if (pageKind === "search") {
       pdpPanel.reset();
       if (previousUrl) searchBadges.prune();
       searchEnabled((enabled) => {
-        if (enabled) searchBadges.start();
+        if (enabled && location.href === navigationUrl && isSearchUrl(navigationUrl)) {
+          searchBadges.start();
+        }
       });
       return;
     }
@@ -95,6 +116,7 @@
     if (searchApolloDataListener) window.removeEventListener("paw-search-apollo-data", searchApolloDataListener);
     searchBadges.stop();
     pdpPanel.reset();
+    clearLastPolicy();
   }
 
   lifecycle = lifecycleApi.createLifecycle({
@@ -113,10 +135,7 @@
     safeStorageSet: (data) => lifecycle.storage.set(data),
     scheduleRescan,
     withMutationsSuppressed,
-    onPolicy: ({ policy }) => {
-      lastPolicy = policy;
-      window.__pawLastPolicy = policy;
-    },
+    onPolicy: handlePolicy,
   });
 
   searchBadges = searchApi.createSearchBadges({
@@ -172,10 +191,12 @@
         return;
       }
       if (message?.type === "paw-get-policy") {
-        sendResponse({ policy: lastPolicy, url: location.href });
+        sendResponse({ policy: getCurrentPolicy(), url: location.href });
       } else if (message?.type === "paw-rescan") {
         pdpPanel.scan(true).then(() => {
-          if (lifecycle.isContextValid()) sendResponse({ policy: lastPolicy });
+          if (lifecycle.isContextValid()) {
+            sendResponse({ policy: getCurrentPolicy(), url: location.href });
+          }
         });
         return true;
       } else if (message?.type === "paw-test-trigger-invalidation") {
@@ -193,6 +214,10 @@
   }
 
   lifecycle.start();
+  const storageMaintenance = globalThis.PawSearchCache?.performStorageMaintenance;
+  if (typeof storageMaintenance === "function") {
+    storageMaintenance(lifecycle.storage).catch(() => {});
+  }
 
   if (typeof module !== "undefined" && module.exports) {
     module.exports = {
@@ -200,6 +225,8 @@
         onUrlMaybeChanged: lifecycle.__test.checkUrl,
         withMutationsSuppressed,
         handleNavigate,
+        handlePolicy,
+        getCurrentPolicy,
         handleMutate,
         handleInvalidate,
         getSiteRegistry,

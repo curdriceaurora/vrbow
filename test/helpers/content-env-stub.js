@@ -42,14 +42,15 @@ function installIntervalGuard() {
 }
 
 /**
- * Registers the three real shared modules as the window-globals content.js
+ * Registers the real shared modules as the window-globals content.js
  * expects to already be present (mirrors manifest.json's script-load
- * order: site-registry.js, extract.js, formatters.js, then content.js).
+ * order: site-registry.js, extract.js, search-cache.js, formatters.js, then content.js).
  */
 function installPawGlobals() {
   globalThis.PawSiteRegistry = require("../../src/shared/site-registry.js");
   globalThis.PawExtract = require("../../src/shared/extract.js");
   globalThis.PawFormatters = require("../../src/shared/formatters.js");
+  globalThis.PawSearchCache = require("../../src/shared/search-cache.js");
 }
 
 module.exports = { MockCustomEvent, MockEvent, installIntervalGuard, installPawGlobals };

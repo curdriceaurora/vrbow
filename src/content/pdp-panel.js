@@ -19,6 +19,8 @@
     const scheduleRescan = deps.scheduleRescan || (() => {});
     const withMutationsSuppressed = deps.withMutationsSuppressed || ((work) => work());
     const onPolicy = deps.onPolicy || (() => {});
+    const { serializeSearchPolicyForCache } = root.PawSearchCache;
+    const LAST_POLICY_TTL_MS = 24 * 60 * 60 * 1000;
 
     let latestApolloPayload = null;
     let isScanning = false;
@@ -911,7 +913,11 @@
       const canonicalPolicy = typeof PawExtract?.normalizePolicy === "function"
         ? PawExtract.normalizePolicy(rawPolicy, propId, "listing-page")
         : rawPolicy;
-      safeStorageSet({ pawLastPolicy: canonicalPolicy, pawLastUrl: startUrl });
+      safeStorageSet({
+        pawLastPolicy: serializeSearchPolicyForCache(canonicalPolicy),
+        pawLastUrl: startUrl,
+        pawLastPolicyExpiresAt: Date.now() + LAST_POLICY_TTL_MS,
+      });
       renderPanel(canonicalPolicy);
       onPolicy({ policy: canonicalPolicy, url: startUrl });
     } finally {

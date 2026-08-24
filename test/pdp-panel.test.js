@@ -4,6 +4,7 @@ const { parseHTML } = require("linkedom");
 
 const extract = require("../src/shared/extract.js");
 const formatters = require("../src/shared/formatters.js");
+const searchCache = require("../src/shared/search-cache.js");
 
 function installDom(url = "https://www.vrbo.com/3000003") {
   const { window, document } = parseHTML(`<!doctype html><html><body><main>
@@ -29,6 +30,7 @@ function installDom(url = "https://www.vrbo.com/3000003") {
   };
   globalThis.PawExtract = extract;
   globalThis.PawFormatters = formatters;
+  globalThis.PawSearchCache = searchCache;
   globalThis.PawSiteRegistry = {
     getPropertyId: () => "3000003",
     isListingUrl: () => true,
@@ -126,10 +128,15 @@ test("pdp panel renders, responds, repositions, and removes owned DOM", () => {
 
 test("pdp panel scans structured and DOM policy data", async () => {
   const { panel, storageWrites, policies } = createPanel();
+  const beforeScan = Date.now();
   await panel.scan(false);
   assert.ok(document.getElementById("paw-panel"));
   assert.equal(storageWrites.length, 1);
   assert.equal(storageWrites[0].pawLastPolicy.maxDogs, 2);
+  assert.equal(storageWrites[0].pawLastPolicy._raw, undefined);
+  assert.equal(storageWrites[0].pawLastUrl, location.href);
+  assert.ok(storageWrites[0].pawLastPolicyExpiresAt >= beforeScan + (24 * 60 * 60 * 1000));
+  assert.ok(storageWrites[0].pawLastPolicyExpiresAt <= Date.now() + (24 * 60 * 60 * 1000));
   assert.equal(policies[0].policy.maxDogs, 2);
   assert.equal(policies[0].url, location.href);
   assert.equal(window.__pawLastPolicy, undefined);

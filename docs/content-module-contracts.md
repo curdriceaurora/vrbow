@@ -138,8 +138,10 @@ clears all URL-scoped harvested text, payload state, and scan state, then remove
 panel with session reset.
 
 `onPolicy({ policy, url })` fires only after a current scan renders and persists its
-policy. The controller mirrors that policy to `window.__pawLastPolicy` for popup
-compatibility.
+policy. Persistence uses the canonical summary allowlist (never `_raw` extraction
+details) and an explicit 24-hour expiry. The controller mirrors the in-memory policy
+to `window.__pawLastPolicy`, binds it to the scanned URL, and clears it on every SPA
+navigation so popup requests cannot receive a previous listing's result.
 
 Current ownership moved here: dialog harvesting/closing, collapsed-section
 expansion, DOM sentence collection, snippet navigation, panel positioning and

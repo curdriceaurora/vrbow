@@ -728,6 +728,46 @@ test("search badging stays inactive when the preference is unset", () => {
   assert.equal(__test.getSearchBadges().isActive(), false);
 });
 
+test("listing policy is cleared and URL-bound across SPA navigation", () => {
+  installHarness();
+  __test.cleanupSearchManager();
+  globalThis.location.href = LISTING_URL;
+  const policy = { schemaVersion: 1, petsAllowed: true };
+
+  __test.handlePolicy({ policy, url: LISTING_URL });
+  assert.equal(__test.getCurrentPolicy(), policy);
+
+  const nextListing = "https://www.vrbo.com/4000004";
+  globalThis.location.href = nextListing;
+  assert.equal(__test.getCurrentPolicy(), null, "URL binding protects even before navigation cleanup runs");
+  __test.handleNavigate({ previousUrl: LISTING_URL, url: nextListing, pageKind: "listing" });
+
+  assert.equal(__test.getCurrentPolicy(), null);
+  assert.equal(globalThis.window.__pawLastPolicy, null);
+  clearAllTimers();
+});
+
+test("a delayed search preference read cannot restart badges after navigation", () => {
+  installHarness();
+  __test.cleanupSearchManager();
+  const lifecycleStorage = __test.getLifecycle().storage;
+  const originalGet = lifecycleStorage.get;
+  let releasePreference;
+  lifecycleStorage.get = (_keys, callback) => { releasePreference = callback; };
+
+  globalThis.location.href = SEARCH_URL_A;
+  __test.handleNavigate({ previousUrl: LISTING_URL, url: SEARCH_URL_A, pageKind: "search" });
+  assert.equal(typeof releasePreference, "function");
+
+  globalThis.location.href = LISTING_URL;
+  __test.handleNavigate({ previousUrl: SEARCH_URL_A, url: LISTING_URL, pageKind: "listing" });
+  releasePreference({ paw_enable_search_badging: true });
+
+  assert.equal(__test.getSearchBadges().isActive(), false);
+  lifecycleStorage.get = originalGet;
+  clearAllTimers();
+});
+
 test("search card orchestration: recycle gate, dwell jitter, scan throttle, and nav prune", async (t) => {
   installHarness();
 

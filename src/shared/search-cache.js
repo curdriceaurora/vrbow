@@ -15,6 +15,12 @@
 
   const CACHE_PREFIX = "paw_cache_";
   const ALIAS_PREFIX = "paw_alias_";
+  const LEGACY_PREFIXES = ["vrbow_cache_", "vrbow_alias_"];
+  const LEGACY_KEYS = new Set([
+    "vrbow_enable_search_badging",
+    "vdpLastPolicy",
+    "vdpLastUrl",
+  ]);
   const CACHE_RECORD_VERSION = 1;
   const POLICY_SCHEMA_VERSION = 1;
   const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -139,8 +145,7 @@
 
   /**
    * 8.2.7 Bounded Storage Maintenance:
-   * Remove stale, expired, or incompatible PawCheck cache keys from storage.
-   * Sweeps only keys with the paw_cache_ prefix.
+   * Remove stale or incompatible PawCheck records and pre-PawCheck storage keys.
    * Records no analytics.
    */
   async function performStorageMaintenance(storage, options = {}) {
@@ -161,7 +166,12 @@
           let inspected = 0;
 
           for (const [key, entry] of Object.entries(allItems)) {
-            // Sweep only keys with the paw_cache_ prefix
+            if (LEGACY_KEYS.has(key) || LEGACY_PREFIXES.some((prefix) => key.startsWith(prefix))) {
+              inspected++;
+              keysToRemove.push(key);
+              continue;
+            }
+
             if (!key.startsWith(CACHE_PREFIX)) {
               continue;
             }
@@ -185,6 +195,18 @@
             if (isCorrupt || isIncompatible || isExpired) {
               keysToRemove.push(key);
             }
+          }
+
+          const lastPolicyKeys = ["pawLastPolicy", "pawLastUrl", "pawLastPolicyExpiresAt"]
+            .filter((key) => Object.prototype.hasOwnProperty.call(allItems, key));
+          if (lastPolicyKeys.length) {
+            inspected += lastPolicyKeys.length;
+            const validLastPolicy = allItems.pawLastPolicy &&
+              typeof allItems.pawLastPolicy === "object" &&
+              typeof allItems.pawLastUrl === "string" &&
+              typeof allItems.pawLastPolicyExpiresAt === "number" &&
+              now < allItems.pawLastPolicyExpiresAt;
+            if (!validLastPolicy) keysToRemove.push(...lastPolicyKeys);
           }
 
           if (keysToRemove.length > 0 && typeof storage.remove === "function") {
@@ -347,42 +369,64 @@
               const effectiveKey = resolveCacheKey(effectiveId, targetUrl);
               const defaultEffectiveKey = CACHE_PREFIX + effectiveId;
 
-              const entry = items ? (
-                items[effectiveKey] ||
-                items[propKey] ||
-                items[targetKey] ||
-                items[defaultEffectiveKey] ||
-                items[defaultPropKey] ||
-                items[defaultTargetKey]
-              ) : null;
+              if (alias && items &&
+                  !Object.prototype.hasOwnProperty.call(items, effectiveKey) &&
+                  !Object.prototype.hasOwnProperty.call(items, defaultEffectiveKey)) {
+                storage.get(Array.from(new Set([effectiveKey, defaultEffectiveKey])), (canonicalItems) => {
+                  if (isDisposed) {
+                    resolve(null);
+                    return;
+                  }
+                  processEntry({ ...items, ...(canonicalItems || {}) });
+                });
+                return;
+              }
 
-              if (
-                entry &&
-                entry.cacheVersion === CACHE_RECORD_VERSION &&
-                entry.expiresAt &&
-                Date.now() < entry.expiresAt &&
-                entry.data?.policy?.schemaVersion === POLICY_SCHEMA_VERSION
-              ) {
-                setMemoryCache(effectiveId, { data: entry.data, ts: entry.storedAt || Date.now() });
-                if (propertyId !== effectiveId) {
-                  setMemoryCache(propertyId, { data: entry.data, ts: entry.storedAt || Date.now() });
+              processEntry(items);
+
+              function processEntry(availableItems) {
+                if (isDisposed) {
+                  resolve(null);
+                  return;
                 }
-                resolve(entry.data);
-              } else {
-                if (entry) {
-                  // Incompatible or expired: prune asynchronously
-                  try {
-                    storage.remove([
-                      effectiveKey,
-                      propKey,
-                      targetKey,
-                      defaultEffectiveKey,
-                      defaultPropKey,
-                      defaultTargetKey,
-                    ], () => {});
-                  } catch {}
+
+                const entry = availableItems ? (
+                  availableItems[effectiveKey] ||
+                  availableItems[propKey] ||
+                  availableItems[targetKey] ||
+                  availableItems[defaultEffectiveKey] ||
+                  availableItems[defaultPropKey] ||
+                  availableItems[defaultTargetKey]
+                ) : null;
+
+                if (
+                  entry &&
+                  entry.cacheVersion === CACHE_RECORD_VERSION &&
+                  entry.expiresAt &&
+                  Date.now() < entry.expiresAt &&
+                  entry.data?.policy?.schemaVersion === POLICY_SCHEMA_VERSION
+                ) {
+                  setMemoryCache(effectiveId, { data: entry.data, ts: entry.storedAt || Date.now() });
+                  if (propertyId !== effectiveId) {
+                    setMemoryCache(propertyId, { data: entry.data, ts: entry.storedAt || Date.now() });
+                  }
+                  resolve(entry.data);
+                } else {
+                  if (entry) {
+                    // Incompatible or expired: prune asynchronously
+                    try {
+                      storage.remove([
+                        effectiveKey,
+                        propKey,
+                        targetKey,
+                        defaultEffectiveKey,
+                        defaultPropKey,
+                        defaultTargetKey,
+                      ], () => {});
+                    } catch {}
+                  }
+                  resolve(null);
                 }
-                resolve(null);
               }
             });
           } catch {

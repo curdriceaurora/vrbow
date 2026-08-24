@@ -33,7 +33,8 @@ function renderPolicy(policy) {
     return;
   }
 
-  if (!raw.found && !policy.restrictionsFound) {
+  const hasCanonicalAllowance = policy.schemaVersion === 1 && policy.petsAllowed === true;
+  if (!raw.found && !policy.restrictionsFound && !hasCanonicalAllowance) {
     c.appendChild(el(`<p class="muted">No dog policy details detected on this page yet. Try Rescan after the page fully loads, or check House Rules manually.</p>`));
     return;
   }
@@ -126,13 +127,26 @@ function loadPolicy() {
       return;
     }
     chrome.tabs.sendMessage(tab.id, { type: "paw-get-policy" }, (resp) => {
-      if (chrome.runtime.lastError || !resp || !resp.policy) {
+      if (chrome.runtime.lastError || !resp || !resp.policy || resp.url !== tab.url) {
         // Content script may not have responded yet (e.g. page still
         // loading) — fall back to the last result it cached to storage.
-        chrome.storage?.local?.get?.(["pawLastPolicy", "pawLastUrl"], (data) => {
-          if (data && data.pawLastUrl === tab.url && data.pawLastPolicy) {
+        chrome.storage?.local?.get?.(["pawLastPolicy", "pawLastUrl", "pawLastPolicyExpiresAt"], (data) => {
+          const isCurrent = data &&
+            data.pawLastUrl === tab.url &&
+            data.pawLastPolicy &&
+            typeof data.pawLastPolicyExpiresAt === "number" &&
+            Date.now() < data.pawLastPolicyExpiresAt;
+          if (isCurrent) {
             renderPolicy(data.pawLastPolicy);
           } else {
+            if (data?.pawLastPolicy &&
+                (!Number.isFinite(data.pawLastPolicyExpiresAt) || data.pawLastPolicyExpiresAt <= Date.now())) {
+              chrome.storage?.local?.remove?.([
+                "pawLastPolicy",
+                "pawLastUrl",
+                "pawLastPolicyExpiresAt",
+              ]);
+            }
             renderPolicy(null);
           }
         });
@@ -148,7 +162,7 @@ document.getElementById("rescan").addEventListener("click", () => {
   withActiveTab((tab) => {
     if (!tab) return;
     chrome.tabs.sendMessage(tab.id, { type: "paw-rescan" }, (resp) => {
-      if (chrome.runtime.lastError || !resp) {
+      if (chrome.runtime.lastError || !resp || resp.url !== tab.url) {
         renderPolicy(null);
         return;
       }

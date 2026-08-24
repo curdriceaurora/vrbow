@@ -2,6 +2,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { parseListingHtml, createSearchFetchQueue, validateListingUrl, performStorageMaintenance, CACHE_PREFIX, serializeSearchPolicyForCache, calculatePolicyCompleteness, canPolicyUpgrade } = require("../src/shared/search-fetcher.js");
+const { createSearchCache } = require("../src/shared/search-cache.js");
 
 test("search-fetcher HTML parsing", async (t) => {
   await t.test("detects bot challenge HTML and marks as challenge", () => {
@@ -710,6 +711,42 @@ test("search-fetcher queue and caching", async (t) => {
     queue.dispose();
   });
 
+  await t.test("persisted aliases resolve their canonical cache entry on the first lookup", async () => {
+    const now = Date.now();
+    const store = {
+      paw_alias_old_id: "canonical_id",
+      paw_cache_canonical_id: {
+        cacheVersion: 1,
+        storedAt: now,
+        expiresAt: now + 60000,
+        data: {
+          status: "ok",
+          policy: { schemaVersion: 1, petsAllowed: true, maxDogs: 2 },
+        },
+      },
+    };
+    const reads = [];
+    const storage = {
+      get(keys, callback) {
+        reads.push([].concat(keys));
+        const result = {};
+        for (const key of [].concat(keys)) {
+          if (Object.prototype.hasOwnProperty.call(store, key)) result[key] = store[key];
+        }
+        callback(result);
+      },
+      remove(_keys, callback) { callback?.(); },
+    };
+    const cache = createSearchCache({ storage, autoMaintenance: false });
+
+    const cached = await cache.getCached("old_id");
+
+    assert.equal(cached?.policy?.maxDogs, 2);
+    assert.equal(reads.length, 2, "alias discovery should fetch the canonical record immediately");
+    assert.ok(reads[1].includes("paw_cache_canonical_id"));
+    cache.dispose();
+  });
+
   await t.test("8.2.7: performStorageMaintenance sweeps expired, corrupt, and schema-incompatible keys while preserving valid PawCheck keys and unrelated keys", async () => {
     const now = 1700000000000;
     const removedLog = [];
@@ -762,6 +799,17 @@ test("search-fetcher queue and caching", async (t) => {
         // Corrupted entry (MUST BE REMOVED)
         "paw_cache_corrupted": null,
 
+        // Pre-PawCheck records are no longer read and must not remain stranded.
+        "vrbow_cache_legacy": { expiresAt: now + 86400000 },
+        "vrbow_alias_legacy": "canonical",
+        "vrbow_enable_search_badging": true,
+        "vdpLastPolicy": { petsAllowed: true },
+        "vdpLastUrl": "https://www.vrbo.com/legacy",
+
+        // A legacy non-expiring PawCheck fallback record must also be removed.
+        "pawLastPolicy": { petsAllowed: true },
+        "pawLastUrl": "https://www.vrbo.com/old-policy",
+
         // Unrelated storage keys (MUST BE PRESERVED UNTOUCHED)
         "user_settings": { theme: "dark", compactBadges: true },
         "search_query_history": ["austin", "lake tahoe"],
@@ -789,8 +837,8 @@ test("search-fetcher queue and caching", async (t) => {
 
     const result = await performStorageMaintenance(mockStorage, { now });
 
-    assert.equal(result.inspected, 6, "Should inspect all 6 paw_cache_ keys");
-    assert.equal(result.removed, 4, "Should remove exactly 4 stale/incompatible paw_cache_ keys");
+    assert.equal(result.inspected, 13, "Should inspect managed cache, fallback, and legacy keys");
+    assert.equal(result.removed, 11, "Should remove stale, incompatible, and legacy records");
     assert.deepEqual(
       result.removedKeys.sort(),
       [
@@ -798,6 +846,13 @@ test("search-fetcher queue and caching", async (t) => {
         "paw_cache_expired",
         "paw_cache_incompatible_schema",
         "paw_cache_incompatible_version",
+        "pawLastPolicy",
+        "pawLastUrl",
+        "vdpLastPolicy",
+        "vdpLastUrl",
+        "vrbow_alias_legacy",
+        "vrbow_cache_legacy",
+        "vrbow_enable_search_badging",
       ].sort()
     );
 
@@ -811,6 +866,13 @@ test("search-fetcher queue and caching", async (t) => {
     assert.equal(mockStorage.store["paw_cache_incompatible_version"], undefined);
     assert.equal(mockStorage.store["paw_cache_incompatible_schema"], undefined);
     assert.equal(mockStorage.store["paw_cache_corrupted"], undefined);
+    assert.equal(mockStorage.store["vrbow_cache_legacy"], undefined);
+    assert.equal(mockStorage.store["vrbow_alias_legacy"], undefined);
+    assert.equal(mockStorage.store["vrbow_enable_search_badging"], undefined);
+    assert.equal(mockStorage.store["vdpLastPolicy"], undefined);
+    assert.equal(mockStorage.store["vdpLastUrl"], undefined);
+    assert.equal(mockStorage.store["pawLastPolicy"], undefined);
+    assert.equal(mockStorage.store["pawLastUrl"], undefined);
 
     // 3. Unrelated keys are completely untouched
     assert.deepEqual(mockStorage.store["user_settings"], { theme: "dark", compactBadges: true });
@@ -2274,4 +2336,3 @@ test("queue pacing: amendments to issue #20", async (t) => {
     queue.dispose();
   });
 });
-

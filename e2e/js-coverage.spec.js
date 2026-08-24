@@ -357,7 +357,14 @@ test("8.2.4: exercises and reports browser-path coverage for production content.
     </body>`);
 
   // 3. Popup scenario creator
-  function createPopupHtml(tabUrl, policyResponse, lastError = null) {
+  function createPopupHtml(
+    tabUrl,
+    policyResponse,
+    lastError = null,
+    storedPolicy = policyResponse?.policy || null,
+    storedExpiresAt = Date.now() + (24 * 60 * 60 * 1000)
+  ) {
+    const contentResponse = policyResponse ? { ...policyResponse, url: tabUrl } : policyResponse;
     return `<!doctype html>
     <html lang="en" class="paw-theme-root">
       <head>
@@ -374,16 +381,18 @@ test("8.2.4: exercises and reports browser-path coverage for production content.
                 get(keys, cb) {
                   cb({
                     pawLastUrl: "https://www.vrbo.com/123456",
-                    pawLastPolicy: ${JSON.stringify(policyResponse?.policy || null)}
+                    pawLastPolicy: ${JSON.stringify(storedPolicy)},
+                    pawLastPolicyExpiresAt: ${storedExpiresAt}
                   });
                 },
-                set(k, cb) { cb && cb(); }
+                set(k, cb) { cb && cb(); },
+                remove(k, cb) { cb && cb(); }
               }
             },
             tabs: {
               query(opts, cb) { cb([{ id: 101, url: ${JSON.stringify(tabUrl)} }]); },
               sendMessage(id, msg, cb) {
-                cb(${JSON.stringify(policyResponse)});
+                cb(${JSON.stringify(contentResponse)});
               }
             }
           };
@@ -615,7 +624,13 @@ test("8.2.4: exercises and reports browser-path coverage for production content.
     // 6. Runtime error with storage fallback
     {
       url: "https://www.vrbo.com/popup-fallback.html",
-      html: createPopupHtml("https://www.vrbo.com/123456", null, "Port closed")
+      html: createPopupHtml(
+        "https://www.vrbo.com/123456",
+        null,
+        "Port closed",
+        { schemaVersion: 1, petsAllowed: true, restrictionsFound: false }
+      ),
+      expectedText: "Max dogs"
     }
   ];
 
@@ -625,6 +640,7 @@ test("8.2.4: exercises and reports browser-path coverage for production content.
     await p.coverage.startJSCoverage();
     await p.goto(sc.url);
     await expect(p.locator("#toggle-search-badging")).not.toBeChecked();
+    if (sc.expectedText) await expect(p.locator("#content")).toContainText(sc.expectedText);
     const rescanBtn = p.locator("#rescan");
     if (await rescanBtn.count() > 0) {
       await rescanBtn.click();

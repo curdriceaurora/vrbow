@@ -8,16 +8,16 @@
 
 ### 1. Data Collection and Transmission
 - **No Remote Data Transmission**: PawCheck does not transmit any browsing activity, personal data, user credentials, booking details, or analytics to the developer or any third-party server.
-- **Local Storage Cache**: To avoid repeated network requests when you browse search results, the extension caches parsed pet-policy records locally in your browser (`chrome.storage.local`), keyed by property ID, for up to 24 hours. This data remains strictly local on your device.
-- **Direct First-Party Network Requests**: When search badging is active, the extension fetches public property pages directly from `vrbo.com` using your browser's session.
+- **Local Storage Cache**: The extension stores parsed pet-policy summaries locally in your browser (`chrome.storage.local`) for up to 24 hours. This includes property-ID-keyed records used to avoid repeated search-result requests and the most recent listing summary used as a short-lived popup fallback. Raw page text and extraction details are not persisted. This data remains strictly local on your device.
+- **Direct First-Party Network Requests**: When Vrbo search badging is active, the extension fetches public property pages directly from `vrbo.com` using your browser's session. On Vrbo, Airbnb, and Expedia listing pages, policy extraction runs locally against content already loaded in the active page.
 
 ---
 
 ### 2. Browser Permissions
 The extension requests three permissions to perform its core functions:
-- **`host_permissions` (`*://*.vrbo.com/*`)**: Reads public listing content on `vrbo.com` to extract pet policy rules on listing pages and search result cards.
+- **`host_permissions` (`*://*.vrbo.com/*`, `*://*.airbnb.com/*`, `*://*.expedia.com/*`)**: Reads public listing content on supported Vrbo, Airbnb, and Expedia pages to extract pet-policy rules. Vrbo permission also supports optional search-result badging.
 - **`storage`**: Stores parsed listing pet policy summaries locally on your device for up to 24 hours. The extension never transmits or shares this cached data.
-- **`activeTab`**: Connects the toolbar popup to the active Vrbo tab when you click the extension icon or trigger a rescan.
+- **`activeTab`**: Connects the toolbar popup to the active supported listing tab when you click the extension icon or trigger a rescan.
 
 ---
 

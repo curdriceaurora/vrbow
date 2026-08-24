@@ -5,7 +5,7 @@
 // reappear anywhere in tracked source. Run via
 // `node tools/check-no-legacy-monikers.js`.
 //
-// Two known, deliberate exceptions — not regressions to chase down:
+// Known, deliberate exceptions — not regressions to chase down:
 //   - CHANGELOG.md: dated historical entries accurately describe what was
 //     true at each past release and are never retconned to match later
 //     naming. Exempted for the whole file, not line-by-line — simpler,
@@ -21,6 +21,10 @@
 //     line — a line pairing the permitted URL with unrelated banned text
 //     (e.g. "Vrbow source: https://github.com/curdriceaurora/vrbow")
 //     still fails on the leftover "Vrbow".
+//   - Exact retired storage-key literals used only by the bounded migration
+//     cleanup and its tests. As with the URL, only the recognized key
+//     substring is stripped, so unrelated legacy naming on the same line
+//     still fails.
 //
 // Uses `git grep`, which only searches tracked files and skips binary
 // files automatically, rather than hand-rolling file discovery.
@@ -42,6 +46,7 @@ function main() {
   const EXEMPT_FILE_PREFIX = "CHANGELOG.md:";
   const SELF_PREFIX = "tools/check-no-legacy-monikers.js:";
   const EXEMPT_URL = /github\.com\/curdriceaurora\/vrbow/gi;
+  const EXEMPT_STORAGE_KEY = /vrbow_(?:cache_|alias_|enable_search_badging)|vdpLast(?:Policy|Url)/gi;
   const BANNED = /vrbow|vdp/i;
 
   const hits = [...gitGrep("vrbow"), ...gitGrep("vdp")].filter((line) => {
@@ -50,7 +55,7 @@ function main() {
     // Strip only the permitted URL substring, then re-check what's left —
     // exempting the URL must not also exempt unrelated banned text that
     // happens to share its line.
-    return BANNED.test(line.replace(EXEMPT_URL, ""));
+    return BANNED.test(line.replace(EXEMPT_URL, "").replace(EXEMPT_STORAGE_KEY, ""));
   });
 
   const unique = Array.from(new Set(hits)).sort();
