@@ -12,7 +12,7 @@ const EXTENSION_ROOT = path.resolve(__dirname, "../src");
 async function extensionIdFromManagementPage(context) {
   const page = await context.newPage();
   await page.goto("chrome://extensions/");
-  const item = page.locator("extensions-item").filter({ hasText: "Vrbow" });
+  const item = page.locator("extensions-item").filter({ hasText: "PawCheck" });
   await expect(item).toHaveCount(1);
   const extensionId = await item.getAttribute("id");
   await page.close();

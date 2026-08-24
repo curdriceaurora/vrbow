@@ -2,10 +2,10 @@ async function enableSearchBadging(context) {
   const page = await context.newPage();
   try {
     await page.goto("chrome://extensions/");
-    const item = page.locator("extensions-item").filter({ hasText: "Vrbow" });
+    const item = page.locator("extensions-item").filter({ hasText: "PawCheck" });
     await item.waitFor();
     const extensionId = await item.getAttribute("id");
-    if (!extensionId) throw new Error("Could not resolve the Vrbow extension ID");
+    if (!extensionId) throw new Error("Could not resolve the PawCheck extension ID");
 
     await page.goto(`chrome-extension://${extensionId}/popup/popup.html`);
     await page.evaluate(() => new Promise((resolve, reject) => {

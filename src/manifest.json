@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Vrbow: Dog Policy Callout",
+  "name": "PawCheck: Dog Policy Callout",
   "version": "1.4.0",
   "description": "Surfaces dog-friendliness details (dog limit, weight limit, pre-registration, fees) directly on Vrbo, Airbnb, and Expedia listings.",
   "icons": {
@@ -9,7 +9,7 @@
     "128": "icons/icon128.png"
   },
   "action": {
-    "default_title": "Vrbow - Dog Policy Callout",
+    "default_title": "PawCheck - Dog Policy Callout",
     "default_popup": "popup/popup.html",
     "default_icon": {
       "16": "icons/icon16.png",

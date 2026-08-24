@@ -1,14 +1,14 @@
 <div align="center">
 
-<img src="src/icons/icon128.png" alt="Vrbow Icon" width="96" height="96">
+<img src="src/icons/icon128.png" alt="PawCheck Icon" width="96" height="96">
 
-# Vrbow: Dog Policy Callout
+# PawCheck: Dog Policy Callout
 
 **A Chrome extension that extracts pet rules from Vrbo, Airbnb, and Expedia listings and shows them in a summary card.**
 
 <br>
 
-<img src="docs/listing-popup.gif" alt="Vrbow Listing Callout in Action" width="100%">
+<img src="docs/listing-popup.gif" alt="PawCheck Listing Callout in Action" width="100%">
 
 </div>
 
@@ -65,7 +65,7 @@ The extension can also add pet policy badges directly to Vrbo search results, ma
 
 ## Installation & Setup
 
-1. Download **`vrbow-v1.4.0.zip`** from [Releases](https://github.com/curdriceaurora/vrbow/releases).
+1. Download **`pawcheck-v1.4.0.zip`** from [Releases](https://github.com/curdriceaurora/vrbow/releases).
 2. Unzip the file into a folder on your computer.
 3. Open `chrome://extensions` in your browser.
 4. Turn on **Developer mode** in the top-right corner.
@@ -94,4 +94,4 @@ The extension can also add pet policy badges directly to Vrbo search results, ma
 - [Privacy Policy](PRIVACY.md)
 - [License](LICENSE)
 
-> **Note**: Vrbow is an independent open-source tool. It is not affiliated with or endorsed by Vrbo or Expedia Group. No support is guaranteed. Always verify the host's original house rules before you book a property.
+> **Note**: PawCheck is an independent open-source tool. It is not affiliated with or endorsed by Vrbo or Expedia Group. No support is guaranteed. Always verify the host's original house rules before you book a property.

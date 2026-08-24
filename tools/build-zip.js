@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // tools/build-zip.js
-// Packages src/ into dist/vrbow-vX.Y.Z.zip for Chrome Web Store submission.
+// Packages src/ into dist/pawcheck-vX.Y.Z.zip for Chrome Web Store submission.
 
 const { execFileSync } = require("node:child_process");
 const fs = require("node:fs");
@@ -19,7 +19,7 @@ function main() {
   }
 
   fs.mkdirSync(DIST_DIR, { recursive: true });
-  const zipName = `vrbow-v${version}.zip`;
+  const zipName = `pawcheck-v${version}.zip`;
   const zipPath = path.join(DIST_DIR, zipName);
 
   if (fs.existsSync(zipPath)) {
