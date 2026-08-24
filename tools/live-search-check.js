@@ -72,6 +72,9 @@ function sleep(ms) {
 const SCRIPT_PATHS = {
   "page-bridge.js": path.join(ROOT, "src", "content", "page-bridge.js"),
   "extract.js": path.join(ROOT, "src", "shared", "extract.js"),
+  "backoff-ladder.js": path.join(ROOT, "src", "shared", "backoff-ladder.js"),
+  "search-cache.js": path.join(ROOT, "src", "shared", "search-cache.js"),
+  "search-response-parser.js": path.join(ROOT, "src", "shared", "search-response-parser.js"),
   "search-fetcher.js": path.join(ROOT, "src", "shared", "search-fetcher.js"),
   "formatters.js": path.join(ROOT, "src", "shared", "formatters.js"),
   "lifecycle.js": path.join(ROOT, "src", "content", "lifecycle.js"),
@@ -268,7 +271,7 @@ async function run() {
 
       await evalCdp(targetCdp, `globalThis.chrome = { storage: { local: { set(o, cb) { cb && cb(); }, get(k, cb) { cb && cb({}); }, remove(k, cb) { cb && cb(); } } }, runtime: { onMessage: { addListener() {} } } };`, { contextId });
 
-      for (const file of ["extract.js", "search-fetcher.js", "formatters.js", "lifecycle.js", "pdp-panel.js", "search-badges.js", "content.js"]) {
+      for (const file of ["extract.js", "backoff-ladder.js", "search-cache.js", "search-response-parser.js", "search-fetcher.js", "formatters.js", "lifecycle.js", "pdp-panel.js", "search-badges.js", "content.js"]) {
         await evalCdp(targetCdp, readScript(file), { contextId });
       }
     }

@@ -82,6 +82,7 @@ The extension can also add pet policy badges directly to Vrbo search results, ma
 ## Development and Support
 
 - **Content architecture**: The browser controller delegates URL and storage lifecycle, listing-panel behavior, and Vrbo search badges to separate modules. See [Content Module Contracts](docs/content-module-contracts.md).
+- **Search fetcher architecture**: The background search-result fetch queue composes separate pacing, caching, and response-parsing modules. See [Search Fetcher Architecture](docs/search-fetcher-architecture.md).
 - **Validation**: Run `npm run test:all` for syntax checks, Node coverage gates, and the Playwright browser suite. See the [Testing Guide](docs/testing.md).
 - **Packaging**: Run `npm run build` to create a versioned Chrome-ready archive in `dist/` from the manifest version.
 - **AI Vibecoded**: This project was built and vibecoded with AI.
