@@ -1,6 +1,6 @@
 # Release Notes
 
-This document records all changes to **Vrbow**.
+This document records all changes to **PawCheck** (formerly Vrbow).
 
 ## [v1.4.0] - 2026-08-23
 
