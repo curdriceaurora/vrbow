@@ -254,6 +254,7 @@
   // it — when there is no usable record the path falls through to the
   // queue immediately.
   const discoveredSearchPropIds = new Set();
+  let latestSearchApolloData = null;
   let searchApolloRequestId = 0;
 
   function requestSearchApolloData() {
@@ -271,7 +272,7 @@
     }
     // The bridge's response event fires synchronously inside the dispatch
     // above; only trust a payload answering THIS request.
-    const payload = getSearchApolloData(requestId);
+    const payload = latestSearchApolloData || getSearchApolloData(requestId);
     return payload && payload.requestId === requestId ? payload : null;
   }
 
@@ -527,6 +528,7 @@
     isScrollPaused = false;
     // Counters are queue-scoped: they reset with the queue they describe.
     resetSearchStats();
+    latestSearchApolloData = null;
     if (searchQueue) {
       searchQueue.dispose();
       searchQueue = null;
@@ -1129,17 +1131,33 @@
       requestScan: requestSearchScan,
       prune: pruneStaleSearchCards,
       hideTooltip,
+      setApolloData: (payload) => { latestSearchApolloData = payload; },
       __test: {
         initSearchManager,
         cleanupSearchManager,
         scanSearchCards,
         bindSearchCard,
+        updateBadgeUi,
+        renderTooltipContent,
+        positionTooltip,
+        showTooltipForBadge,
+        scheduleTooltipHide,
+        getListingValidation,
+        findCardListing,
+        resolveBadgeContainer,
+        requestSearchApolloData,
+        trySearchApolloFastPath,
+        enqueueSearch,
+        sampleQueueDepth,
+        trackCardPropId,
+        untrackCardPropId,
         requestSearchScan,
         pruneStaleSearchCards,
         getSearchStats,
         getSearchQueue: () => searchQueue,
         getTrackedSearchCards: () => trackedSearchCards,
         getSearchCardObserver: () => searchCardObserver,
+        getSearchTooltip: () => searchTooltipEl,
         SEARCH_SCAN_THROTTLE_MS,
         onWindowScroll,
         onScrollSettled,

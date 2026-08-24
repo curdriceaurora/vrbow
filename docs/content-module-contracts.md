@@ -1,6 +1,6 @@
 # Content module contracts
 
-Status: proposed migration boundary for the `content.js` split.
+Status: implemented migration boundary for the `content.js` split.
 
 These contracts describe ownership and call direction. They do not change runtime
 behavior. During extraction, `content.js` remains the only module allowed to call
