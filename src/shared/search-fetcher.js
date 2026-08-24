@@ -1,388 +1,46 @@
 // search-fetcher.js
-// Throttled background queue and persistent cache for search result pet policies.
+// Throttled background fetch queue for search result pet policies. Composes the
+// backoff ladder (pacing/pressure), the search cache (memory + storage persistence),
+// and the response parser (Apollo/HTML -> policy) into the queue engine that owns
+// dispatch order, concurrency, scroll gating, and session budget. Re-exports the
+// parser and cache helpers so existing consumers keep one require/global surface.
 
 (function (root, factory) {
   if (typeof module === "object" && module.exports) {
-    module.exports = factory(require("./extract.js"));
+    module.exports = factory(
+      require("./backoff-ladder.js"),
+      require("./search-cache.js"),
+      require("./search-response-parser.js")
+    );
   } else {
-    root.VdpSearchFetcher = factory(root.VDPExtract || root.VdpExtract);
+    root.VdpSearchFetcher = factory(root.VdpBackoffLadder, root.VdpSearchCache, root.VdpSearchResponseParser);
   }
-})(typeof globalThis !== "undefined" ? globalThis : this, function (extract) {
+})(typeof globalThis !== "undefined" ? globalThis : this, function (backoffLadder, searchCache, parser) {
   "use strict";
 
-  const CACHE_PREFIX = "vrbow_cache_";
-  const ALIAS_PREFIX = "vrbow_alias_";
-  const CACHE_RECORD_VERSION = 1;
-  const POLICY_SCHEMA_VERSION = 1;
-  const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
   const DEFAULT_CONCURRENCY = 2;
-  // Base of the adaptive delay ladder (I10). effectiveMinDelayMs = baseDelayMs * 2 ** ladderStep,
-  // so background pacing walks 800 -> 1600 -> 3200 ms.
-  const DEFAULT_MIN_DELAY_MS = 800;
-  // Global dispatch floor applied to EVERY dispatch regardless of class, high priority
-  // included. Scales on the same shared ladder: 250 -> 500 -> 1000 ms.
-  const HIGH_PRIORITY_FLOOR_MS = 250;
-  // ladderStep saturates here: 800 * 2 ** 2 = 3200 ms. There is no step 3.
-  const MAX_LADDER_STEP = 2;
-  // One-sided jitter: +[0, 30%] of the resolved wait, never below the floor. A symmetric
-  // +/- jitter would permit firing faster than the rate limit it is meant to enforce.
-  const DELAY_JITTER_RATIO = 0.3;
-  // Timeouts / 5xx only escalate after a small cluster, so one noisy timeout does not throttle.
-  const DEFAULT_ERROR_CLUSTER_THRESHOLD = 3;
-  const DEFAULT_ERROR_CLUSTER_WINDOW_MS = 60000;
-  // Recovery is deliberately asymmetric: one success never steps down, a sustained
-  // clean window (zero non-successes) does.
-  const DEFAULT_CLEAN_WINDOW_MS = 60000;
   const DEFAULT_SESSION_CAP = 40;
-  const PAUSE_ON_CHALLENGE_MS = 30000; // 30s backoff if 429 or challenge encountered
-  const DEFAULT_COOLDOWN_MS = 30000; // 30s cooldown for terminal states
-  const DEFAULT_MAX_MEMORY_ENTRIES = 250; // Cap on in-memory LRU cache entries
   const DEFAULT_IDLE_TIMEOUT_MS = 1000; // Mandatory fallback timeout for requestIdleCallback
 
   /**
-   * Walk Apollo graph with full __ref pointer resolution and support for header.text and value/text leaves.
-   * Delegates to shared pure extractor in extract.js.
+   * Resolved lazily on every call (not captured once) so a site adapter registered
+   * after this module loads — or a test that reassigns globalThis.VdpSiteRegistry —
+   * is picked up immediately.
    */
-  function walkApolloNode(state, node, headerCtx, sectionCtx, out, visited, depth, isExplicitPetContext) {
-    if (extract && typeof extract.walkApolloNode === "function") {
-      return extract.walkApolloNode(state, node, headerCtx, sectionCtx, out, visited, depth, isExplicitPetContext);
-    }
-    if (typeof console !== "undefined" && typeof console.warn === "function") {
-      console.warn("[vrbow] extract.walkApolloNode is unavailable; check script load order");
-    }
+  function getSiteRegistry() {
+    return (typeof globalThis !== "undefined" && globalThis.VdpSiteRegistry) ||
+      (typeof require === "function" ? require("./site-registry.js") : null);
   }
 
   /**
-   * Parse raw listing HTML into an extract.js-compatible corpus.
-   * Resolves Apollo state JSON with __ref references or extracts from HTML sections.
-   */
-  function parseListingHtml(html, propertyId, canonicalId) {
-    if (!html || typeof html !== "string") return null;
-
-    // Check for bot challenges or error pages
-    if (/challenge-running|bot or not|cf-browser-verification|captcha/i.test(html)) {
-      return { isChallenge: true };
-    }
-
-    const items = [];
-    let detectedAliases = [];
-
-    // 1. Check for embedded Apollo state in <script> tags
-    let state = null;
-
-    // Pattern A: window.__APOLLO_STATE__ = JSON.parse("...");
-    const idx = html.indexOf("window.__APOLLO_STATE__");
-    if (idx !== -1) {
-      const endScriptIdx = html.indexOf("</script>", idx);
-      const slice = endScriptIdx !== -1 ? html.slice(idx, endScriptIdx) : html.slice(idx, idx + 5000000);
-      
-      // Issue #31: `slice` is already bounded to this one <script> block (or a
-      // 5MB cap), and in practice a listing page emits exactly one
-      // `window.__APOLLO_STATE__ = JSON.parse("...")` assignment per block.
-      // Using a GREEDY capture (rather than lazy `+?`) means the regex engine
-      // consumes to the end of the slice and backtracks to the LAST
-      // occurrence of the closing-quote/`);` boundary, not the first — this
-      // is the far more likely real terminator if the escaped JSON payload
-      // itself happens to contain a literal `");`-like sequence. It is not a
-      // bulletproof JSON-aware scan (a pathological payload could still fool
-      // it), so the JSON.parse calls below stay try/catch-guarded: a
-      // truncated/garbled capture simply fails to parse and `state` stays
-      // null, falling through to the direct-object and <script id=...>
-      // patterns below instead of throwing.
-      const jsonParseMatch = /window\.__APOLLO_STATE__\s*=\s*JSON\.parse\((["'])([\s\S]+)\1\s*\);/.exec(slice);
-      if (jsonParseMatch) {
-        const rawQuoted = jsonParseMatch[0].slice(jsonParseMatch[0].indexOf("(") + 1, jsonParseMatch[0].lastIndexOf(")"));
-        try {
-          const jsonStr = JSON.parse(rawQuoted);
-          state = JSON.parse(jsonStr);
-        } catch {}
-      }
-
-      if (!state) {
-        const directObjMatch = /window\.__APOLLO_STATE__\s*=\s*(\{[\s\S]+?\});\s*(?:<\/script>|\n|$)/.exec(slice);
-        if (directObjMatch) {
-          try {
-            state = JSON.parse(directObjMatch[1]);
-          } catch {}
-        }
-      }
-    }
-
-    // Pattern B: <script id="__APOLLO_STATE__">...</script>
-    if (!state) {
-      const tagMatch = /<script[^>]*id="__APOLLO_STATE__"[^>]*>([\s\S]*?)<\/script>/i.exec(html);
-      if (tagMatch) {
-        try {
-          state = JSON.parse(tagMatch[1]);
-        } catch {}
-      }
-    }
-
-    if (state && typeof state === "object") {
-      try {
-        let targetKey = null;
-        const candidateIds = [propertyId, canonicalId].filter(Boolean).map((id) => String(id).toLowerCase());
-
-        for (const cid of candidateIds) {
-          targetKey = Object.keys(state).find(
-            (k) => k.toLowerCase() === `propertyinfo:${cid}` || k.toLowerCase() === `property:${cid}`
-          );
-          if (targetKey) break;
-        }
-
-        if (!targetKey && candidateIds.length > 0) {
-          for (const k of Object.keys(state)) {
-            if (!k.startsWith("PropertyInfo:") && !k.startsWith("Property:")) continue;
-            const node = state[k];
-            if (!node || typeof node !== "object") continue;
-            const nodeIds = [node.propertyId, node.vrboPropertyId, node.expediaPropertyId, node.id]
-              .filter(Boolean)
-              .map((id) => String(id).toLowerCase());
-            if (candidateIds.some((cid) => nodeIds.includes(cid))) {
-              targetKey = k;
-              break;
-            }
-          }
-        }
-
-        if (!targetKey && candidateIds.length === 0) {
-          targetKey = Object.keys(state).find((k) => k.startsWith("PropertyInfo:")) ||
-                      Object.keys(state).find((k) => k.startsWith("Property:"));
-        }
-
-        const root = targetKey ? state[targetKey] : null;
-        if (root) {
-          if (root.expediaPropertyId) detectedAliases.push(String(root.expediaPropertyId));
-          if (root.propertyId) detectedAliases.push(String(root.propertyId));
-          if (root.id) detectedAliases.push(String(root.id));
-
-          walkApolloNode(state, root, null, null, items);
-        }
-      } catch {}
-    }
-
-    // 2. Extract visible text sentences from raw HTML (description, house rules, amenities)
-    const domSentences = [];
-    const cleanHtml = html
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, " ")
-      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, " ")
-      .replace(/<svg\b[^<]*(?:(?!<\/svg>)<[^<]*)*<\/svg>/gi, " ")
-      .replace(/<noscript\b[^<]*(?:(?!<\/noscript>)<[^<]*)*<\/noscript>/gi, " ")
-      .replace(/<br\s*\/?>/gi, "\n")
-      .replace(/<\/(p|div|section|article|li|h[1-6]|tr|td|th|dd|dt|blockquote)>/gi, "\n");
-
-    const rawText = cleanHtml.replace(/<[^>]+>/g, " ");
-    const sentences = typeof extract.getSentences === "function"
-      ? extract.getSentences(rawText)
-      : [];
-    const seenSentences = new Set();
-    for (const s of sentences) {
-      if (typeof extract.isPetRelated === "function" && extract.isPetRelated(s) && !seenSentences.has(s)) {
-        seenSentences.add(s);
-        domSentences.push({ text: s, source: "About this property" });
-      }
-    }
-
-    if (items.length === 0 && domSentences.length === 0) return null;
-
-    // Build corpus combining Apollo items and visible HTML sentences
-    const corpus = extract.buildCorpus({ items }, domSentences);
-    if (!corpus || corpus.length === 0) return null;
-    const rawPolicy = extract.extractPolicy(corpus);
-    if (!rawPolicy || !rawPolicy.found) return null;
-    const effectivePropId = canonicalId || propertyId;
-    const policy = typeof extract.normalizePolicy === "function"
-      ? extract.normalizePolicy(rawPolicy, effectivePropId, "search-response")
-      : rawPolicy;
-    return {
-      ok: true,
-      propertyId: effectivePropId,
-      requestedId: propertyId,
-      canonicalId,
-      aliases: Array.from(new Set(detectedAliases)),
-      policy,
-      rawItemsCount: items.length + domSentences.length,
-    };
-  }
-
-  /**
-   * A "concrete" canonical policy is one a badge can actually show — not a
-   * null policy and not one whose every field is "not specified".
-   */
-  function hasConcretePolicy(policy) {
-    return Boolean(policy && (
-      policy.petsAllowed !== null ||
-      policy.maxDogs !== null ||
-      policy.weightLimit !== null ||
-      policy.fee !== null ||
-      policy.deposit !== null ||
-      policy.approvalRequired !== null ||
-      (policy.restrictionNoteCount && policy.restrictionNoteCount > 0) ||
-      (policy._raw?.otherNotes && policy._raw.otherNotes.length > 0)
-    ));
-  }
-
-  /**
-   * Identifies whether a cached policy is merely a preliminary search-level
-   * boolean flag without specific secondary numbers/rules.
-   */
-  function isShallowPreliminaryPolicy(policy) {
-    if (!policy || typeof policy !== "object") return false;
-    // Definitive negative policy never needs upgrading
-    if (policy.petsAllowed === false) return false;
-    // Rich policy with secondary constraints does not need upgrading
-    if (policy.maxDogs !== null && policy.maxDogs !== undefined) return false;
-    if (policy.weightLimit && policy.weightLimit.value !== null) return false;
-    if (policy.fee && policy.fee.amount !== null) return false;
-    if (policy.deposit && policy.deposit.amount !== null) return false;
-    if (policy.approvalRequired !== null && policy.approvalRequired !== undefined) return false;
-    if ((policy.restrictionNoteCount && policy.restrictionNoteCount > 0) || (policy._raw?.otherNotes && policy._raw.otherNotes.length > 0)) return false;
-
-    // Shallow boolean flag from search results state
-    return policy.source === "search-page-state" || policy._source === "search-page-state";
-  }
-
-  /**
-   * Build a concrete canonical policy from a search-page Apollo record
-   * (a bridge result of { propertyId, items }). Returns null when the
-   * record is empty or yields nothing concrete — callers then fall
-   * through to a normal listing fetch.
-   */
-  function resolveSearchApolloRecord(record, propertyId, source = "search-page-state") {
-    if (!record || !Array.isArray(record.items) || record.items.length === 0) return null;
-    const corpus = extract.buildCorpus({ items: record.items }, []);
-    if (!corpus || corpus.length === 0) return null;
-    const rawPolicy = extract.extractPolicy(corpus);
-    if (!rawPolicy || !rawPolicy.found) return null;
-    const policy = typeof extract.normalizePolicy === "function"
-      ? extract.normalizePolicy(rawPolicy, propertyId, source)
-      : rawPolicy;
-    return hasConcretePolicy(policy) ? policy : null;
-  }
-
-  /**
-   * Calculate a numeric completeness score for a policy based on concrete fields.
-   */
-  function calculatePolicyCompleteness(policy) {
-    if (!policy) return 0;
-    let score = 0;
-    if (policy.petsAllowed !== null && policy.petsAllowed !== undefined) score += 2;
-    if (policy.maxDogs !== null && policy.maxDogs !== undefined) score += 2;
-    if (policy.weightLimit && policy.weightLimit.value !== null) score += 2;
-    if (policy.fee && policy.fee.amount !== null) score += 2;
-    if (policy.deposit && policy.deposit.amount !== null) score += 1;
-    if (policy.approvalRequired !== null && policy.approvalRequired !== undefined) score += 1;
-    if (policy.restrictionsFound) score += 1;
-    return score;
-  }
-
-  /**
-   * Enforces data quality precedence:
-   * valid detailed cache > detailed listing > detailed Apollo > shallow Apollo > unknown.
-   */
-  function canPolicyUpgrade(existingPolicy, newPolicy, newSource) {
-    if (!existingPolicy) return true;
-    if (!newPolicy) return false;
-
-    const existingScore = calculatePolicyCompleteness(existingPolicy);
-    const newScore = calculatePolicyCompleteness(newPolicy);
-
-    // If new is strictly more complete, allow upgrade
-    if (newScore > existingScore) return true;
-    // If existing is strictly more complete, prevent downgrade
-    if (existingScore > newScore) return false;
-
-    // If scores are equal, prefer direct listing fetch over search Apollo state
-    const sourcePriority = { "listing-page": 3, "search-response": 2, "search-page-state": 1 };
-    const existingPri = sourcePriority[existingPolicy.source] || 0;
-    const newPri = sourcePriority[newSource || newPolicy.source] || 0;
-
-    return newPri >= existingPri;
-  }
-
-  /**
-   * Strict persistence serializer that allowlists canonical schema fields
-   * and strips unneeded _raw objects, snippets, and DOM text from storage.
-   */
-  function serializeSearchPolicyForCache(policy) {
-    if (!policy || typeof policy !== "object") return null;
-    return {
-      schemaVersion: POLICY_SCHEMA_VERSION,
-      propertyId: policy.propertyId || null,
-      source: policy.source || "search-response",
-      extractedAt: policy.extractedAt || new Date().toISOString(),
-      petsAllowed: policy.petsAllowed !== undefined ? policy.petsAllowed : null,
-      maxDogs: policy.maxDogs !== undefined ? policy.maxDogs : null,
-      weightLimit: policy.weightLimit ? {
-        value: policy.weightLimit.value,
-        unit: policy.weightLimit.unit,
-        ...(policy.weightLimit.pounds !== undefined ? { pounds: policy.weightLimit.pounds } : {}),
-      } : null,
-      fee: policy.fee ? {
-        amount: policy.fee.amount,
-        currency: policy.fee.currency,
-        period: policy.fee.period,
-        ...(policy.fee.text !== undefined ? { text: policy.fee.text } : {}),
-        ...(policy.fee.perPet ? { perPet: true } : {}),
-        ...(policy.fee.tiered ? { tiered: true } : {}),
-      } : null,
-      deposit: policy.deposit ? {
-        amount: policy.deposit.amount,
-        currency: policy.deposit.currency,
-        ...(policy.deposit.text !== undefined ? { text: policy.deposit.text } : {}),
-      } : null,
-      approvalRequired: policy.approvalRequired !== undefined ? policy.approvalRequired : null,
-      restrictionsFound: Boolean(policy.restrictionsFound),
-      contradictions: policy.contradictions && typeof policy.contradictions === "object" ? {
-        maxDogs: Boolean(policy.contradictions.maxDogs),
-        weightLimit: Boolean(policy.contradictions.weightLimit),
-        fee: Boolean(policy.contradictions.fee),
-      } : { maxDogs: false, weightLimit: false, fee: false },
-      restrictionNoteCount: typeof policy.restrictionNoteCount === "number" ? policy.restrictionNoteCount : 0,
-      confidence: policy.confidence || "low",
-    };
-  }
-
-  /**
-   * Search Fetch Queue & Cache Manager
+   * Search Fetch Queue Engine: dispatch ordering, concurrency, scroll gating, and
+   * session budget, wired to a backoff ladder for pacing and a search cache for
+   * persistence.
    */
   function createSearchFetchQueue(options = {}) {
     const fetchFn = options.fetchFn || (typeof fetch !== "undefined" ? fetch.bind(globalThis) : null);
-    const storage = options.storage || (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local ? chrome.storage.local : null);
     const maxConcurrent = options.maxConcurrent !== undefined ? options.maxConcurrent : DEFAULT_CONCURRENCY;
-    const minDelayMs = options.minDelayMs !== undefined ? options.minDelayMs : DEFAULT_MIN_DELAY_MS;
     const sessionCap = options.sessionCap !== undefined ? options.sessionCap : DEFAULT_SESSION_CAP;
-    const ttlMs = options.ttlMs !== undefined ? options.ttlMs : DEFAULT_TTL_MS;
-    const pauseOnChallengeMs = options.pauseOnChallengeMs !== undefined ? options.pauseOnChallengeMs : PAUSE_ON_CHALLENGE_MS;
-    const cooldownMs = options.cooldownMs !== undefined ? options.cooldownMs : DEFAULT_COOLDOWN_MS;
-    // minDelayMs IS baseDelayMs: the ladder base, not a separate knob.
-    const baseDelayMs = minDelayMs;
-    // Global spacing floor: hpFloor = min(HIGH_PRIORITY_FLOOR_MS, baseDelayMs).
-    // The clamp is an invariant of the two-tracker design, not a test convenience:
-    // lastDispatchAt gates EVERY dispatch, so hpFloor is the aggregate rate limit
-    // sitting underneath the per-class background floor. Letting it exceed
-    // baseDelayMs would make the "global" floor stricter than the background floor
-    // it is supposed to sit under, and background items would then be paced by the
-    // high-priority term instead of their own. At production constants the clamp is
-    // inert (min(250, 800) = 250); it only binds when baseDelayMs is configured
-    // below 250 ms.
-    const highPriorityFloorMs = Math.min(
-      options.highPriorityFloorMs !== undefined ? options.highPriorityFloorMs : HIGH_PRIORITY_FLOOR_MS,
-      baseDelayMs
-    );
-    const errorClusterThreshold = options.errorClusterThreshold !== undefined
-      ? options.errorClusterThreshold
-      : DEFAULT_ERROR_CLUSTER_THRESHOLD;
-    const errorClusterWindowMs = options.errorClusterWindowMs !== undefined
-      ? options.errorClusterWindowMs
-      : DEFAULT_ERROR_CLUSTER_WINDOW_MS;
-    const cleanWindowMs = options.cleanWindowMs !== undefined
-      ? options.cleanWindowMs
-      : DEFAULT_CLEAN_WINDOW_MS;
-    const randomFn = typeof options.randomFn === "function" ? options.randomFn : Math.random;
-    const maxMemoryEntries = typeof options.maxMemoryEntries === "number"
-      ? options.maxMemoryEntries
-      : DEFAULT_MAX_MEMORY_ENTRIES;
     const idleCallbackTimeoutMs = typeof options.idleCallbackTimeoutMs === "number"
       ? options.idleCallbackTimeoutMs
       : DEFAULT_IDLE_TIMEOUT_MS;
@@ -405,61 +63,43 @@
           ? globalThis.cancelIdleCallback.bind(globalThis)
           : ((id) => clearTimeout(id)));
 
-    const memoryCache = new Map();
-    const terminalCooldowns = new Map(); // propertyId -> { data, expiresAt, allowBypass }
+    const ladder = backoffLadder.createBackoffLadder({
+      baseDelayMs: options.minDelayMs,
+      highPriorityFloorMs: options.highPriorityFloorMs,
+      errorClusterThreshold: options.errorClusterThreshold,
+      errorClusterWindowMs: options.errorClusterWindowMs,
+      cleanWindowMs: options.cleanWindowMs,
+      pauseOnChallengeMs: options.pauseOnChallengeMs,
+      randomFn: options.randomFn,
+    });
+
+    const cache = searchCache.createSearchCache({
+      storage: options.storage,
+      ttlMs: options.ttlMs,
+      cooldownMs: options.cooldownMs,
+      maxMemoryEntries: options.maxMemoryEntries,
+      maintenanceIntervalMs: options.maintenanceIntervalMs,
+      autoMaintenance: options.autoMaintenance,
+    });
+
     const queue = []; // [{ propertyId, url, priority }]
     const activeRequests = new Set();
     const enqueuedOrActive = new Set();
     const subscribers = new Map(); // propertyId -> Set of callbacks
     const highPriorityIds = new Set();
 
-    function setMemoryCache(key, value) {
-      if (!key) return;
-      memoryCache.delete(key);
-      memoryCache.set(key, value);
-      if (memoryCache.size > maxMemoryEntries) {
-        const oldestKey = memoryCache.keys().next().value;
-        if (oldestKey !== undefined) {
-          memoryCache.delete(oldestKey);
-        }
-      }
-    }
-
     let sessionRequestsCount = 0;
     let isProcessing = false;
-    let pausedUntil = 0;
     let isDisposed = false;
     let idleHandle = null;
     let scrollPaused = false;
-    // Two trackers, not three. lastDispatchAt is written by every dispatch (both classes),
-    // so it is always at least as recent as a dedicated high-priority tracker would be.
-    let lastDispatchAt = 0;
-    let lastBgStart = 0;
-    let ladderStep = 0;
-    let lastNonSuccessAt = Date.now();
-    const softFailureTimes = [];
     // enqueue() stages a property synchronously but only pushes it to `queue` after an
     // async storage lookup. Tokens let remove() cancel a still-pending push.
     const pendingEnqueues = new Map();
     let enqueueSeq = 0;
     let maxObservedConcurrency = 0;
     let pauseTimer = null;
-    let maintenanceIntervalTimer = null;
     const scheduledTimers = new Set();
-    const maintenanceIntervalMs = typeof options.maintenanceIntervalMs === "number"
-      ? options.maintenanceIntervalMs
-      : 24 * 60 * 60 * 1000;
-
-    if (storage && options.autoMaintenance !== false) {
-      performStorageMaintenance(storage).catch(() => {});
-      if (maintenanceIntervalMs > 0) {
-        maintenanceIntervalTimer = setInterval(() => {
-          if (!isDisposed && storage) {
-            performStorageMaintenance(storage).catch(() => {});
-          }
-        }, maintenanceIntervalMs);
-      }
-    }
 
     function scheduleTimer(fn, ms) {
       if (isDisposed) return null;
@@ -530,276 +170,13 @@
       }
     }
 
-    const aliasMap = new Map();
-
-    function recordTerminalState(propertyId, data, allowBypass = false) {
-      if (!propertyId || isDisposed) return;
-      terminalCooldowns.set(propertyId, {
-        data,
-        expiresAt: Date.now() + cooldownMs,
-        allowBypass,
-      });
-    }
-
-    function getMemoryCache(id) {
-      if (!id || !memoryCache.has(id)) return null;
-      const mem = memoryCache.get(id);
-      if (Date.now() - mem.ts < ttlMs) {
-        memoryCache.delete(id);
-        memoryCache.set(id, mem);
-        return mem;
-      }
-      memoryCache.delete(id);
-      return null;
-    }
-
-    function resolveCacheKey(propId, urlHint) {
-      if (!propId) return "";
-      try {
-        const siteRegistry = (typeof globalThis !== "undefined" && globalThis.VdpSiteRegistry) ||
-          (typeof require === "function" ? require("./site-registry.js") : null);
-        if (siteRegistry && typeof siteRegistry.getCacheKey === "function") {
-          return siteRegistry.getCacheKey(urlHint || propId, propId);
-        }
-      } catch {}
-      return CACHE_PREFIX + propId;
-    }
-
-    async function getCached(propertyId, targetUrl) {
-      if (!propertyId || isDisposed) return null;
-      const targetId = aliasMap.get(String(propertyId).toLowerCase()) || propertyId;
-
-      // Check in-memory LRU cache first (synchronous & zero-cost)
-      const mem = getMemoryCache(targetId) || getMemoryCache(propertyId);
-      if (mem) {
-        return mem.data;
-      }
-
-      // Check terminal cooldowns (transient fast-path for non-ok terminal states)
-      const terminal = terminalCooldowns.get(targetId) || terminalCooldowns.get(propertyId);
-      if (terminal) {
-        if (Date.now() < terminal.expiresAt) {
-          return terminal.data;
-        }
-        terminalCooldowns.delete(targetId);
-        terminalCooldowns.delete(propertyId);
-      }
-
-      // Check persistent storage
-      if (storage) {
-        return new Promise((resolve) => {
-          try {
-            const targetKey = resolveCacheKey(targetId, targetUrl);
-            const propKey = resolveCacheKey(propertyId, targetUrl);
-            const defaultTargetKey = CACHE_PREFIX + targetId;
-            const defaultPropKey = CACHE_PREFIX + propertyId;
-            const keysToFetch = Array.from(new Set([
-              targetKey,
-              propKey,
-              defaultTargetKey,
-              defaultPropKey,
-              ALIAS_PREFIX + propertyId,
-            ]));
-
-            storage.get(keysToFetch, (items) => {
-              if (isDisposed) {
-                resolve(null);
-                return;
-              }
-              const alias = items ? items[ALIAS_PREFIX + propertyId] : null;
-              if (alias && typeof alias === "string") {
-                aliasMap.set(String(propertyId).toLowerCase(), alias);
-              }
-              const effectiveId = alias || targetId;
-              const effectiveKey = resolveCacheKey(effectiveId, targetUrl);
-              const defaultEffectiveKey = CACHE_PREFIX + effectiveId;
-
-              const entry = items ? (
-                items[effectiveKey] ||
-                items[propKey] ||
-                items[targetKey] ||
-                items[defaultEffectiveKey] ||
-                items[defaultPropKey] ||
-                items[defaultTargetKey]
-              ) : null;
-
-              if (
-                entry &&
-                entry.cacheVersion === CACHE_RECORD_VERSION &&
-                entry.expiresAt &&
-                Date.now() < entry.expiresAt &&
-                entry.data?.policy?.schemaVersion === POLICY_SCHEMA_VERSION
-              ) {
-                setMemoryCache(effectiveId, { data: entry.data, ts: entry.storedAt || Date.now() });
-                if (propertyId !== effectiveId) {
-                  setMemoryCache(propertyId, { data: entry.data, ts: entry.storedAt || Date.now() });
-                }
-                resolve(entry.data);
-              } else {
-                if (entry) {
-                  // Incompatible or expired: prune asynchronously
-                  try {
-                    storage.remove([
-                      effectiveKey,
-                      propKey,
-                      targetKey,
-                      defaultEffectiveKey,
-                      defaultPropKey,
-                      defaultTargetKey,
-                    ], () => {});
-                  } catch {}
-                }
-                resolve(null);
-              }
-            });
-          } catch {
-            resolve(null);
-          }
-        });
-      }
-      return null;
-    }
-
-    async function setCached(propertyId, data, options) {
-      if (!propertyId || isDisposed || !data) return { accepted: false, data: null, policy: null };
-      const persist = !options || options.persist !== false;
-
-      // Check precedence against existing cache to prevent downgrading richer data
-      const existing = await getCached(propertyId, options?.targetUrl || data?.targetUrl);
-      if (isDisposed) return { accepted: false, data: null, policy: null };
-
-      if (existing && existing.policy && data.policy) {
-        if (!canPolicyUpgrade(existing.policy, data.policy, data.source || data.policy.source)) {
-          return {
-            accepted: false,
-            data: existing,
-            policy: existing.policy,
-          };
-        }
-      }
-
-      // Serialize policy with field allowlist (strips _raw, snippets, etc.)
-      const persistentPolicy = serializeSearchPolicyForCache(data.policy);
-      const persistentData = {
-        ...data,
-        policy: persistentPolicy || data.policy,
-      };
-
-      const storedAt = Date.now();
-      const expiresAt = storedAt + ttlMs;
-      const entry = {
-        cacheVersion: CACHE_RECORD_VERSION,
-        propertyId,
-        storedAt,
-        expiresAt,
-        data: persistentData,
-      };
-      setMemoryCache(propertyId, { data: persistentData, ts: storedAt });
-
-      if (storage && persist) {
-        try {
-          const targetUrl = options?.targetUrl || data?.targetUrl;
-          const cacheKey = resolveCacheKey(propertyId, targetUrl);
-          storage.set({ [cacheKey]: entry }, () => {});
-        } catch (e) {
-          console.warn("Vrbow failed to write cache:", e);
-        }
-      }
-
-      return { accepted: true, data: persistentData, policy: persistentData.policy };
-    }
-
-    // --- Adaptive delay ladder: one scalar, one counter, one timer -------------
-    function effectiveMinDelayMs() {
-      return baseDelayMs * Math.pow(2, ladderStep);
-    }
-
-    function hpMinDelayMs() {
-      return highPriorityFloorMs * Math.pow(2, ladderStep);
-    }
-
-    /** One-sided jitter, applied ONCE to an already-resolved wait. */
-    function applyJitter(waitMs) {
-      if (!(waitMs > 0)) return waitMs;
-      return waitMs + randomFn() * DELAY_JITTER_RATIO * waitMs;
-    }
-
-    function bumpLadder() {
-      if (ladderStep < MAX_LADDER_STEP) ladderStep++;
-    }
-
-    /**
-     * Restarts the clean window used for recovery. Called only by the two pressure
-     * outcomes below (hard block, soft failure). Everything else — `unknown`, 404 and
-     * other non-429/403 4xx — is inert on this path as well as on the ladder.
-     */
-    function noteNonSuccess() {
-      lastNonSuccessAt = Date.now();
-    }
-
-    /**
-     * 429 / 403 / bot challenge. Does exactly two things, once per event:
-     * sets the hard 30s pause AND advances the shared ladder. The pause is the
-     * immediate stop; the ladder is what makes the resumption slower.
-     */
-    function noteHardBlock() {
-      pausedUntil = Date.now() + pauseOnChallengeMs;
-      noteNonSuccess();
-      bumpLadder();
-    }
-
-    /** Timeout / 5xx / network error: escalates only on a cluster. */
-    function noteSoftFailure() {
-      const now = Date.now();
-      noteNonSuccess();
-      softFailureTimes.push(now);
-      while (softFailureTimes.length > 0 && now - softFailureTimes[0] > errorClusterWindowMs) {
-        softFailureTimes.shift();
-      }
-      if (softFailureTimes.length >= errorClusterThreshold) {
-        softFailureTimes.length = 0; // next escalation needs another full cluster
-        bumpLadder();
-      }
-    }
-
-    /**
-     * A concrete-policy success. Steps down only after a sustained clean window.
-     *
-     * Recovery is success-driven BY DESIGN, not on a timer: a ladder sitting above
-     * step 0 with zero traffic does not self-heal, it waits for the next successful
-     * fetch. This is intentional. An idle queue issues no requests, so an elevated
-     * floor costs nothing while idle, and the first request after an idle stretch is
-     * the one that most needs to be careful. Queues do not outlive a page session,
-     * so there is no long-lived state to leak.
-     */
-    function noteSuccess() {
-      const now = Date.now();
-      if (ladderStep > 0 && now - lastNonSuccessAt >= cleanWindowMs) {
-        ladderStep--;
-        lastNonSuccessAt = now; // the next step-down needs another full window
-      }
-    }
-
-    /**
-     * wait = max(hpFloor - since(lastDispatchAt), classFloor - since(classStart))
-     * Background needs both terms: the global one binds when a hover has just fired,
-     * the class one otherwise. High priority only needs the global term, since
-     * lastDispatchAt already covers every previous high-priority dispatch.
-     */
-    function computeDispatchWait(isHighPriority, now) {
-      const globalWait = hpMinDelayMs() - (now - lastDispatchAt);
-      if (isHighPriority) return Math.max(globalWait, 0);
-      const classWait = effectiveMinDelayMs() - (now - lastBgStart);
-      return Math.max(globalWait, classWait, 0);
-    }
-
     async function processQueue() {
       if (isProcessing || isDisposed) return;
       if (typeof document !== "undefined" && document.visibilityState === "hidden") {
         return;
       }
-      if (Date.now() < pausedUntil) {
-        const remainingPause = pausedUntil - Date.now();
+      if (ladder.isPaused()) {
+        const remainingPause = ladder.getPausedUntil() - Date.now();
         scheduleTimer(processQueue, remainingPause + 50);
         return;
       }
@@ -811,7 +188,7 @@
           activeRequests.size < maxConcurrent &&
           !isDisposed &&
           (typeof document === "undefined" || document.visibilityState !== "hidden") &&
-          Date.now() >= pausedUntil
+          !ladder.isPaused()
         ) {
           // Peek the next item FIRST: per-class pacing floors cannot be evaluated before
           // the item's class is known, so the gate below runs after the priority pick.
@@ -821,7 +198,7 @@
           const candidate = queue[nextIndex];
 
           // SCROLL GATE: normal items break the loop without touching any other state
-          // (ladder, pausedUntil, lastNonSuccessAt are all untouched); high-priority
+          // (ladder, pause, clean-window are all untouched); high-priority
           // items (user hover) proceed unimpeded regardless of scroll state.
           if (!isHighPriority && scrollPaused) {
             break;
@@ -836,15 +213,14 @@
             highPriorityIds.delete(candidate.propertyId);
             enqueuedOrActive.delete(candidate.propertyId);
             const result = { status: "capped", propertyId: candidate.propertyId };
-            recordTerminalState(candidate.propertyId, result, true);
+            cache.recordTerminalState(candidate.propertyId, result, true);
             notify(candidate.propertyId, result);
             continue;
           }
 
           // Check memory cache once more before firing network
-          const targetId = aliasMap.get(String(candidate.propertyId).toLowerCase()) || candidate.propertyId;
-          const cached = memoryCache.get(targetId) || memoryCache.get(candidate.propertyId);
-          if (cached && Date.now() - cached.ts < ttlMs && !isShallowPreliminaryPolicy(cached.data?.policy)) {
+          const cached = cache.peekMemory(candidate.propertyId);
+          if (cached && !cache.isShallowPreliminaryPolicy(cached.data?.policy)) {
             queue.splice(nextIndex, 1);
             highPriorityIds.delete(candidate.propertyId);
             enqueuedOrActive.delete(candidate.propertyId);
@@ -853,9 +229,9 @@
           }
 
           // Pacing gate. Jitter is applied ONCE to the resolved max(...), never per term.
-          const wait = computeDispatchWait(isHighPriority, Date.now());
+          const wait = ladder.computeDispatchWait(isHighPriority, Date.now());
           if (wait > 0) {
-            scheduleTimer(processQueue, applyJitter(wait));
+            scheduleTimer(processQueue, ladder.applyJitter(wait));
             break;
           }
 
@@ -865,8 +241,7 @@
           // Execute fetch
           sessionRequestsCount++;
           const dispatchedAt = Date.now();
-          lastDispatchAt = dispatchedAt;
-          if (!isHighPriority) lastBgStart = dispatchedAt;
+          ladder.recordDispatch(isHighPriority, dispatchedAt);
           activeRequests.add(nextItem.propertyId);
           maxObservedConcurrency = Math.max(maxObservedConcurrency, activeRequests.size);
 
@@ -894,12 +269,11 @@
       try {
         if (!fetchFn) throw new Error("No fetch implementation available");
 
-        const validated = validateListingUrl(url);
+        const validated = parser.validateListingUrl(url);
         let targetUrl = validated ? validated.fetchUrl : url;
 
         try {
-          const siteRegistry = (typeof globalThis !== "undefined" && globalThis.VdpSiteRegistry) ||
-            (typeof require === "function" ? require("./site-registry.js") : null);
+          const siteRegistry = getSiteRegistry();
           if (siteRegistry && typeof siteRegistry.decorateFetchUrl === "function") {
             targetUrl = siteRegistry.decorateFetchUrl(targetUrl);
           }
@@ -915,11 +289,11 @@
         if (isDisposed) return;
 
         if (res.status === 429 || res.status === 403) {
-          // One shared counter: noteHardBlock sets pausedUntil AND advances ladderStep,
+          // One shared counter: noteHardBlock sets the pause AND advances the ladder,
           // exactly once for this event.
-          noteHardBlock();
+          ladder.noteHardBlock();
           const result = { status: "rate_limited", propertyId };
-          recordTerminalState(propertyId, result, false);
+          cache.recordTerminalState(propertyId, result, false);
           notify(propertyId, result);
           return;
         }
@@ -930,9 +304,9 @@
           // — the property is simply gone. It is fully inert, exactly like `unknown`:
           // it neither advances the ladder nor resets the clean window, so a scatter
           // of delisted listings cannot hold the ladder elevated and block recovery.
-          if (res.status >= 500) noteSoftFailure();
+          if (res.status >= 500) ladder.noteSoftFailure();
           const result = { status: "error", code: res.status, propertyId };
-          recordTerminalState(propertyId, result, false);
+          cache.recordTerminalState(propertyId, result, false);
           notify(propertyId, result);
           return;
         }
@@ -941,7 +315,7 @@
         let canonicalId = null;
         if (res.url && typeof res.url === "string") {
           try {
-            const resValidated = validateListingUrl(res.url);
+            const resValidated = parser.validateListingUrl(res.url);
             if (resValidated && resValidated.propertyId && resValidated.propertyId.toLowerCase() !== propertyId.toLowerCase()) {
               canonicalId = resValidated.propertyId;
             }
@@ -953,15 +327,14 @@
 
         let parsed = null;
         try {
-          const siteRegistry = (typeof globalThis !== "undefined" && globalThis.VdpSiteRegistry) ||
-            (typeof require === "function" ? require("./site-registry.js") : null);
+          const siteRegistry = getSiteRegistry();
           if (siteRegistry && typeof siteRegistry.parseListingData === "function") {
             parsed = siteRegistry.parseListingData(targetUrl, html, propertyId, canonicalId);
           } else {
-            parsed = parseListingHtml(html, propertyId, canonicalId);
+            parsed = parser.parseListingHtml(html, propertyId, canonicalId);
           }
         } catch {
-          parsed = parseListingHtml(html, propertyId, canonicalId);
+          parsed = parser.parseListingHtml(html, propertyId, canonicalId);
         }
 
         if (parsed && !parsed.policy && !parsed.isChallenge && typeof parsed === "object" && ("petsAllowed" in parsed || "maxDogs" in parsed || "restrictionsFound" in parsed)) {
@@ -969,18 +342,18 @@
         }
 
         if (parsed && parsed.isChallenge) {
-          noteHardBlock();
+          ladder.noteHardBlock();
           const result = { status: "rate_limited", propertyId };
-          recordTerminalState(propertyId, result, false);
+          cache.recordTerminalState(propertyId, result, false);
           notify(propertyId, result);
           return;
         }
 
         const effectiveCanonicalId = canonicalId || parsed?.canonicalId;
-        const hasConcrete = hasConcretePolicy(parsed && parsed.policy);
+        const hasConcrete = parser.hasConcretePolicy(parsed && parsed.policy);
 
         if (hasConcrete) {
-          noteSuccess();
+          ladder.noteSuccess();
           const data = {
             status: "ok",
             propertyId,
@@ -988,26 +361,21 @@
             policy: parsed.policy,
             ts: Date.now(),
           };
-          terminalCooldowns.delete(propertyId);
-          if (effectiveCanonicalId) terminalCooldowns.delete(effectiveCanonicalId);
+          cache.clearTerminalState(propertyId);
+          if (effectiveCanonicalId) cache.clearTerminalState(effectiveCanonicalId);
 
-          const cachedResult = await setCached(propertyId, data, { persist: true, targetUrl });
+          const cachedResult = await cache.setCached(propertyId, data, { persist: true, targetUrl });
 
           // Class 12 & Class 10: Cache under canonical ID and update alias map
           if (effectiveCanonicalId && effectiveCanonicalId.toLowerCase() !== propertyId.toLowerCase()) {
-            await setCached(effectiveCanonicalId, { ...data, propertyId: effectiveCanonicalId }, { persist: true, targetUrl });
-            aliasMap.set(propertyId.toLowerCase(), effectiveCanonicalId);
-            if (storage && typeof storage.set === "function") {
-              try {
-                storage.set({ [`${ALIAS_PREFIX}${propertyId}`]: effectiveCanonicalId }, () => {});
-              } catch {}
-            }
+            await cache.setCached(effectiveCanonicalId, { ...data, propertyId: effectiveCanonicalId }, { persist: true, targetUrl });
+            cache.setAlias(propertyId, effectiveCanonicalId, { persist: true });
           }
 
           if (parsed?.aliases && Array.isArray(parsed.aliases)) {
             for (const alias of parsed.aliases) {
               if (alias && alias.toLowerCase() !== propertyId.toLowerCase()) {
-                aliasMap.set(alias.toLowerCase(), effectiveCanonicalId || propertyId);
+                cache.setAlias(alias, effectiveCanonicalId || propertyId);
               }
             }
           }
@@ -1026,22 +394,22 @@
             propertyId,
             policy: null,
           };
-          recordTerminalState(propertyId, result, false);
+          cache.recordTerminalState(propertyId, result, false);
           notify(propertyId, result);
         }
       } catch (err) {
         if (isDisposed) return;
         if (err.name === "AbortError") {
           // Stalled request timed out: emit terminal timeout result (never cached)
-          noteSoftFailure();
+          ladder.noteSoftFailure();
           const result = { status: "timeout", propertyId };
-          recordTerminalState(propertyId, result, false);
+          cache.recordTerminalState(propertyId, result, false);
           notify(propertyId, result);
           return;
         }
-        noteSoftFailure();
+        ladder.noteSoftFailure();
         const result = { status: "error", error: err.message, propertyId };
-        recordTerminalState(propertyId, result, false);
+        cache.recordTerminalState(propertyId, result, false);
         notify(propertyId, result);
       } finally {
         clearTimeout(timer);
@@ -1053,30 +421,25 @@
       if (!propertyId || !url || isDisposed) return;
 
       // 1. Check memory cache synchronously (with alias lookup)
-      const targetId = aliasMap.get(String(propertyId).toLowerCase()) || propertyId;
-      const mem = memoryCache.get(targetId) || memoryCache.get(propertyId);
-      if (mem && Date.now() - mem.ts < ttlMs) {
+      const mem = cache.peekMemory(propertyId);
+      if (mem) {
         notify(propertyId, mem.data);
-        if (targetId !== propertyId) notify(targetId, mem.data);
-        if (!isShallowPreliminaryPolicy(mem.data?.policy)) {
+        if (mem.targetId !== propertyId) notify(mem.targetId, mem.data);
+        if (!cache.isShallowPreliminaryPolicy(mem.data?.policy)) {
           return;
         }
       }
 
       // 2. Check terminal-state cooldown
-      const terminal = terminalCooldowns.get(propertyId);
+      const terminal = cache.getTerminalState(propertyId);
       if (terminal) {
-        if (Date.now() < terminal.expiresAt) {
-          // If high priority and bypass is allowed (e.g. background-capped property receiving its 1 explicit attempt)
-          if (priority === "high" && terminal.allowBypass) {
-            terminalCooldowns.delete(propertyId);
-            // proceed to enqueue attempt
-          } else {
-            notify(propertyId, terminal.data);
-            return;
-          }
+        // If high priority and bypass is allowed (e.g. background-capped property receiving its 1 explicit attempt)
+        if (priority === "high" && terminal.allowBypass) {
+          cache.clearTerminalState(propertyId);
+          // proceed to enqueue attempt
         } else {
-          terminalCooldowns.delete(propertyId);
+          notify(propertyId, terminal.data);
+          return;
         }
       }
 
@@ -1097,7 +460,7 @@
       // 4. Check storage cache
       const token = ++enqueueSeq;
       pendingEnqueues.set(propertyId, token);
-      getCached(propertyId).then((cached) => {
+      cache.getCached(propertyId).then((cached) => {
         if (isDisposed) return;
         // remove() (or a newer enqueue) invalidated this staged push.
         if (pendingEnqueues.get(propertyId) !== token) return;
@@ -1122,7 +485,7 @@
      * on `enqueuedOrActive.has(propertyId)`, so splicing the queue array alone would
      * lock that property out of enqueueing for the rest of the session.
      *
-     * Deliberately does NOT touch sessionRequestsCount or terminalCooldowns:
+     * Deliberately does NOT touch sessionRequestsCount or terminal cooldowns:
      * clearQueue() semantics are unchanged and the session budget must survive.
      */
     function remove(propertyId) {
@@ -1146,7 +509,7 @@
       highPriorityIds.clear();
       pendingEnqueues.clear();
       sessionRequestsCount = 0;
-      terminalCooldowns.clear();
+      cache.clearCooldowns();
     }
 
     function onVisibilityChange() {
@@ -1178,21 +541,16 @@
         clearTimeout(pauseTimer);
         pauseTimer = null;
       }
-      if (maintenanceIntervalTimer) {
-        clearInterval(maintenanceIntervalTimer);
-        maintenanceIntervalTimer = null;
-      }
       if (typeof document !== "undefined" && typeof document.removeEventListener === "function") {
         document.removeEventListener("visibilitychange", onVisibilityChange);
       }
       subscribers.clear();
-      memoryCache.clear();
-      terminalCooldowns.clear();
+      cache.dispose();
     }
 
     return {
-      getCached,
-      setCached,
+      getCached: cache.getCached,
+      setCached: cache.setCached,
       enqueue,
       remove,
       clearQueue,
@@ -1208,152 +566,28 @@
       getActiveCount: () => activeRequests.size,
       getSessionCount: () => sessionRequestsCount,
       getMaxObservedConcurrency: () => maxObservedConcurrency,
-      isPaused: () => Date.now() < pausedUntil,
-      getLadderStep: () => ladderStep,
-      getEffectiveMinDelayMs: effectiveMinDelayMs,
-      getHighPriorityDelayMs: hpMinDelayMs,
-      isInCooldown: (propertyId) => {
-        const t = terminalCooldowns.get(propertyId);
-        return Boolean(t && Date.now() < t.expiresAt && !t.allowBypass);
-      },
-      getMemoryCacheSize: () => memoryCache.size,
+      isPaused: ladder.isPaused,
+      getLadderStep: ladder.getLadderStep,
+      getEffectiveMinDelayMs: ladder.effectiveMinDelayMs,
+      getHighPriorityDelayMs: ladder.hpMinDelayMs,
+      isInCooldown: cache.isInCooldown,
+      getMemoryCacheSize: cache.getSize,
     };
   }
 
-  /**
-   * 8.2.7 Bounded Storage Maintenance:
-   * Remove stale, expired, or incompatible Vrbow cache keys from storage.
-   * Sweeps only keys with the vrbow_cache_ prefix.
-   * Records no analytics.
-   */
-  async function performStorageMaintenance(storage, options = {}) {
-    if (!storage || typeof storage.get !== "function") {
-      return { inspected: 0, removed: 0, removedKeys: [] };
-    }
-    const now = typeof options.now === "number" ? options.now : Date.now();
-
-    return new Promise((resolve) => {
-      try {
-        storage.get(null, (allItems) => {
-          if (!allItems || typeof allItems !== "object") {
-            resolve({ inspected: 0, removed: 0, removedKeys: [] });
-            return;
-          }
-
-          const keysToRemove = [];
-          let inspected = 0;
-
-          for (const [key, entry] of Object.entries(allItems)) {
-            // Sweep only keys with the vrbow_cache_ prefix
-            if (!key.startsWith(CACHE_PREFIX)) {
-              continue;
-            }
-
-            inspected++;
-
-            // Check if record is corrupt, incompatible, or expired
-            const isCorrupt = !entry || typeof entry !== "object";
-            const isIncompatible = !isCorrupt && (
-              entry.cacheVersion !== CACHE_RECORD_VERSION ||
-              !entry.data ||
-              typeof entry.data !== "object" ||
-              !entry.data.policy ||
-              entry.data.policy.schemaVersion !== POLICY_SCHEMA_VERSION
-            );
-            const isExpired = !isCorrupt && (
-              !entry.expiresAt ||
-              now >= entry.expiresAt
-            );
-
-            if (isCorrupt || isIncompatible || isExpired) {
-              keysToRemove.push(key);
-            }
-          }
-
-          if (keysToRemove.length > 0 && typeof storage.remove === "function") {
-            try {
-              storage.remove(keysToRemove, () => {
-                resolve({ inspected, removed: keysToRemove.length, removedKeys: keysToRemove });
-              });
-            } catch {
-              resolve({ inspected, removed: 0, removedKeys: [] });
-            }
-          } else {
-            resolve({ inspected, removed: 0, removedKeys: [] });
-          }
-        });
-      } catch {
-        resolve({ inspected: 0, removed: 0, removedKeys: [] });
-      }
-    });
-  }
-
-  /**
-   * Extract numeric/alphanumeric property ID from a Vrbo listing URL or path.
-   * Delegates to shared pure extractor in extract.js.
-   */
-  function extractPropertyIdFromUrl(urlStr, baseUrl = "https://www.vrbo.com") {
-    if (extract && typeof extract.extractPropertyId === "function") {
-      return extract.extractPropertyId(urlStr, baseUrl);
-    }
-    if (!urlStr || typeof urlStr !== "string") return null;
-    try {
-      const u = new URL(urlStr, baseUrl);
-      const m = /(?:\/pdp(?:\/lo)?\/|\/vacation-rentals?(?:\/p)?\/p?|\/)(p?\d+[a-z0-9]*)(?:\/|\?|$)/i.exec(u.pathname);
-      if (!m) return null;
-      let propId = m[1];
-      if (/^p\d+/i.test(propId)) propId = propId.slice(1);
-      return propId || null;
-    } catch {
-      return null;
-    }
-  }
-
-  /**
-   * Validate and separate a Vrbo listing URL into a clean canonical fetch URL
-   * (HTTPS, www.vrbo.com or vrbo.com, pathname only, no query or fragment)
-   * and the original navigation URL.
-   */
-  function validateListingUrl(urlStr, baseUrl = "https://www.vrbo.com") {
-    if (!urlStr || typeof urlStr !== "string") return null;
-    try {
-      const u = new URL(urlStr, baseUrl);
-      if (u.protocol !== "https:") return null;
-
-      const siteRegistry = (typeof globalThis !== "undefined" && globalThis.VdpSiteRegistry) ||
-        (typeof require === "function" ? require("./site-registry.js") : null);
-      if (!siteRegistry) return null;
-
-      if (!siteRegistry.isListingUrl(u.href)) return null;
-      const propId = siteRegistry.getPropertyId(u.href);
-      if (!propId) return null;
-
-      const fetchUrl = siteRegistry.getCanonicalFetchUrl(u.href);
-
-      return {
-        propertyId: propId,
-        navigationUrl: u.href,
-        fetchUrl,
-      };
-    } catch {
-      return null;
-    }
-  }
-
   return {
-    CACHE_PREFIX,
-    ALIAS_PREFIX,
-    walkApolloNode,
-    parseListingHtml,
-    hasConcretePolicy,
-    resolveSearchApolloRecord,
+    CACHE_PREFIX: searchCache.CACHE_PREFIX,
+    ALIAS_PREFIX: searchCache.ALIAS_PREFIX,
+    walkApolloNode: parser.walkApolloNode,
+    parseListingHtml: parser.parseListingHtml,
+    hasConcretePolicy: parser.hasConcretePolicy,
+    resolveSearchApolloRecord: parser.resolveSearchApolloRecord,
     createSearchFetchQueue,
-    extractPropertyIdFromUrl,
-    validateListingUrl,
-    performStorageMaintenance,
-    calculatePolicyCompleteness,
-    canPolicyUpgrade,
-    serializeSearchPolicyForCache,
+    extractPropertyIdFromUrl: parser.extractPropertyIdFromUrl,
+    validateListingUrl: parser.validateListingUrl,
+    performStorageMaintenance: searchCache.performStorageMaintenance,
+    calculatePolicyCompleteness: searchCache.calculatePolicyCompleteness,
+    canPolicyUpgrade: searchCache.canPolicyUpgrade,
+    serializeSearchPolicyForCache: searchCache.serializeSearchPolicyForCache,
   };
 });
-
