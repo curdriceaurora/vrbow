@@ -5,7 +5,7 @@ const fs = require("fs");
 async function runLiveSearchHover() {
   const extensionPath = path.join(__dirname, "..", "src");
   
-  console.log("Launching browser with Vrbow extension...");
+  console.log("Launching browser with PawCheck extension...");
   const context = await chromium.launchPersistentContext("", {
     headless: false,
     args: [
@@ -45,7 +45,7 @@ async function runLiveSearchHover() {
   // 2. Enable search badging setting
   await page.evaluate(() => {
     if (globalThis.chrome?.storage?.local) {
-      globalThis.chrome.storage.local.set({ vrbow_enable_search_badging: true });
+      globalThis.chrome.storage.local.set({ paw_enable_search_badging: true });
     }
   });
 
@@ -63,12 +63,12 @@ async function runLiveSearchHover() {
   await page.waitForTimeout(1000);
 
   // 4. Wait for search cards and injected badges
-  console.log("Waiting for .vdp-search-badge to appear on search cards...");
+  console.log("Waiting for .paw-search-badge to appear on search cards...");
   let badgeFound = false;
   try {
-    await page.waitForSelector(".vdp-search-badge", { timeout: 25000 });
+    await page.waitForSelector(".paw-search-badge", { timeout: 25000 });
     badgeFound = true;
-    console.log("Found .vdp-search-badge on live page!");
+    console.log("Found .paw-search-badge on live page!");
   } catch {
     console.log("Search badge not yet detected, checking DOM...");
   }
@@ -77,7 +77,7 @@ async function runLiveSearchHover() {
     const checkState = await page.evaluate(() => {
       return {
         cards: document.querySelectorAll('[data-stid="property-card"], [data-stid="lodging-card-responsive"]').length,
-        badges: document.querySelectorAll('.vdp-search-badge').length,
+        badges: document.querySelectorAll('.paw-search-badge').length,
         title: document.title
       };
     });
@@ -93,7 +93,7 @@ async function runLiveSearchHover() {
   await page.waitForTimeout(4000);
 
   // 5. Select the first search card, scroll it into view, and find the badge
-  const badgeLocator = page.locator(".vdp-search-badge").first();
+  const badgeLocator = page.locator(".paw-search-badge").first();
   await badgeLocator.scrollIntoViewIfNeeded();
   await page.waitForTimeout(1000);
 
@@ -113,7 +113,7 @@ async function runLiveSearchHover() {
   const hitTest = await page.evaluate(({ x, y }) => {
     const el = document.elementFromPoint(x, y);
     const stack = document.elementsFromPoint(x, y).map(e => `${e.tagName}${e.className ? '.' + e.className.replace(/\\s+/g, '.') : ''}`);
-    const badge = document.querySelector(".vdp-search-badge");
+    const badge = document.querySelector(".paw-search-badge");
     return {
       topElement: `${el?.tagName}.${el?.className}`,
       isBadge: badge ? (badge.contains(el) || el === badge) : false,
@@ -133,7 +133,7 @@ async function runLiveSearchHover() {
 
   // 8. Check if Tooltip Dialog is rendered and visible
   const tooltipState = await page.evaluate(() => {
-    const tip = document.getElementById("vdp-search-tooltip");
+    const tip = document.getElementById("paw-search-tooltip");
     if (!tip) return { exists: false };
     const rect = tip.getBoundingClientRect();
     const style = window.getComputedStyle(tip);
@@ -141,7 +141,7 @@ async function runLiveSearchHover() {
       exists: true,
       display: style.display,
       opacity: style.opacity,
-      visibleClass: tip.classList.contains("vdp-tooltip-visible"),
+      visibleClass: tip.classList.contains("paw-tooltip-visible"),
       rect: { x: rect.x, y: rect.y, w: rect.width, h: rect.height },
       text: tip.innerText
     };

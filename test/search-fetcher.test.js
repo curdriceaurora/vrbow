@@ -239,7 +239,7 @@ test("search-fetcher queue and caching", async (t) => {
     const removedKeys = [];
     const mockStorage = {
       store: {
-        "vrbow_cache_old": {
+        "paw_cache_old": {
           cacheVersion: 1,
           propertyId: "old",
           storedAt: Date.now() - (48 * 60 * 60 * 1000),
@@ -270,7 +270,7 @@ test("search-fetcher queue and caching", async (t) => {
 
     const cached = await queue.getCached("old");
     assert.equal(cached, null, "Expired entry should return null");
-    assert.ok(removedKeys.includes("vrbow_cache_old"), "Expired entry should be removed from storage");
+    assert.ok(removedKeys.includes("paw_cache_old"), "Expired entry should be removed from storage");
     queue.dispose();
   });
 
@@ -339,7 +339,7 @@ test("search-fetcher queue and caching", async (t) => {
     const removedKeys = [];
     const mockStorage = {
       store: {
-        "vrbow_cache_valid": {
+        "paw_cache_valid": {
           cacheVersion: 1,
           propertyId: "valid",
           storedAt: Date.now() - 1000,
@@ -352,7 +352,7 @@ test("search-fetcher queue and caching", async (t) => {
             },
           },
         },
-        "vrbow_cache_obsolete_schema": {
+        "paw_cache_obsolete_schema": {
           cacheVersion: 1,
           propertyId: "obsolete_schema",
           storedAt: Date.now() - 1000,
@@ -392,7 +392,7 @@ test("search-fetcher queue and caching", async (t) => {
 
     const obsoleteHit = await queue.getCached("obsolete_schema");
     assert.equal(obsoleteHit, null, "Obsolete policy schema should be treated as cache miss");
-    assert.ok(removedKeys.includes("vrbow_cache_obsolete_schema"), "Obsolete entry must be pruned");
+    assert.ok(removedKeys.includes("paw_cache_obsolete_schema"), "Obsolete entry must be pruned");
 
     queue.dispose();
   });
@@ -710,21 +710,21 @@ test("search-fetcher queue and caching", async (t) => {
     queue.dispose();
   });
 
-  await t.test("8.2.7: performStorageMaintenance sweeps expired, corrupt, and schema-incompatible keys while preserving valid Vrbow keys and unrelated keys", async () => {
+  await t.test("8.2.7: performStorageMaintenance sweeps expired, corrupt, and schema-incompatible keys while preserving valid PawCheck keys and unrelated keys", async () => {
     const now = 1700000000000;
     const removedLog = [];
 
     const mockStorage = {
       store: {
-        // Valid, unexpired Vrbow cache entries (MUST BE KEPT)
-        "vrbow_cache_valid_1": {
+        // Valid, unexpired PawCheck cache entries (MUST BE KEPT)
+        "paw_cache_valid_1": {
           cacheVersion: 1,
           propertyId: "valid_1",
           storedAt: now - 3600000,
           expiresAt: now + 3600000,
           data: { status: "ok", policy: { schemaVersion: 1, petsAllowed: true } },
         },
-        "vrbow_cache_valid_2": {
+        "paw_cache_valid_2": {
           cacheVersion: 1,
           propertyId: "valid_2",
           storedAt: now - 7200000,
@@ -732,8 +732,8 @@ test("search-fetcher queue and caching", async (t) => {
           data: { status: "ok", policy: { schemaVersion: 1, petsAllowed: false } },
         },
 
-        // Expired Vrbow cache entry (MUST BE REMOVED)
-        "vrbow_cache_expired": {
+        // Expired PawCheck cache entry (MUST BE REMOVED)
+        "paw_cache_expired": {
           cacheVersion: 1,
           propertyId: "expired",
           storedAt: now - 86400000 * 2,
@@ -742,7 +742,7 @@ test("search-fetcher queue and caching", async (t) => {
         },
 
         // Incompatible cache version (MUST BE REMOVED)
-        "vrbow_cache_incompatible_version": {
+        "paw_cache_incompatible_version": {
           cacheVersion: 99,
           propertyId: "incompatible_version",
           storedAt: now,
@@ -751,7 +751,7 @@ test("search-fetcher queue and caching", async (t) => {
         },
 
         // Incompatible policy schema version (MUST BE REMOVED)
-        "vrbow_cache_incompatible_schema": {
+        "paw_cache_incompatible_schema": {
           cacheVersion: 1,
           propertyId: "incompatible_schema",
           storedAt: now,
@@ -760,7 +760,7 @@ test("search-fetcher queue and caching", async (t) => {
         },
 
         // Corrupted entry (MUST BE REMOVED)
-        "vrbow_cache_corrupted": null,
+        "paw_cache_corrupted": null,
 
         // Unrelated storage keys (MUST BE PRESERVED UNTOUCHED)
         "user_settings": { theme: "dark", compactBadges: true },
@@ -789,28 +789,28 @@ test("search-fetcher queue and caching", async (t) => {
 
     const result = await performStorageMaintenance(mockStorage, { now });
 
-    assert.equal(result.inspected, 6, "Should inspect all 6 vrbow_cache_ keys");
-    assert.equal(result.removed, 4, "Should remove exactly 4 stale/incompatible vrbow_cache_ keys");
+    assert.equal(result.inspected, 6, "Should inspect all 6 paw_cache_ keys");
+    assert.equal(result.removed, 4, "Should remove exactly 4 stale/incompatible paw_cache_ keys");
     assert.deepEqual(
       result.removedKeys.sort(),
       [
-        "vrbow_cache_corrupted",
-        "vrbow_cache_expired",
-        "vrbow_cache_incompatible_schema",
-        "vrbow_cache_incompatible_version",
+        "paw_cache_corrupted",
+        "paw_cache_expired",
+        "paw_cache_incompatible_schema",
+        "paw_cache_incompatible_version",
       ].sort()
     );
 
     // Verify final storage state:
-    // 1. Valid Vrbow keys are preserved
-    assert.ok(mockStorage.store["vrbow_cache_valid_1"] !== undefined);
-    assert.ok(mockStorage.store["vrbow_cache_valid_2"] !== undefined);
+    // 1. Valid PawCheck keys are preserved
+    assert.ok(mockStorage.store["paw_cache_valid_1"] !== undefined);
+    assert.ok(mockStorage.store["paw_cache_valid_2"] !== undefined);
 
-    // 2. Stale Vrbow keys are gone
-    assert.equal(mockStorage.store["vrbow_cache_expired"], undefined);
-    assert.equal(mockStorage.store["vrbow_cache_incompatible_version"], undefined);
-    assert.equal(mockStorage.store["vrbow_cache_incompatible_schema"], undefined);
-    assert.equal(mockStorage.store["vrbow_cache_corrupted"], undefined);
+    // 2. Stale PawCheck keys are gone
+    assert.equal(mockStorage.store["paw_cache_expired"], undefined);
+    assert.equal(mockStorage.store["paw_cache_incompatible_version"], undefined);
+    assert.equal(mockStorage.store["paw_cache_incompatible_schema"], undefined);
+    assert.equal(mockStorage.store["paw_cache_corrupted"], undefined);
 
     // 3. Unrelated keys are completely untouched
     assert.deepEqual(mockStorage.store["user_settings"], { theme: "dark", compactBadges: true });
@@ -824,14 +824,14 @@ test("search-fetcher queue and caching", async (t) => {
 
     const mockStorage = {
       store: {
-        "vrbow_cache_old_stale": {
+        "paw_cache_old_stale": {
           cacheVersion: 1,
           propertyId: "old_stale",
           storedAt: now - (48 * 3600000),
           expiresAt: now - (24 * 3600000),
           data: { status: "ok", policy: { schemaVersion: 1, petsAllowed: true } },
         },
-        "vrbow_cache_fresh": {
+        "paw_cache_fresh": {
           cacheVersion: 1,
           propertyId: "fresh",
           storedAt: now - 3600000,
@@ -887,8 +887,8 @@ test("search-fetcher queue and caching", async (t) => {
     await new Promise((r) => setTimeout(r, 60));
 
     // Stale key was swept in the background
-    assert.equal(mockStorage.store["vrbow_cache_old_stale"], undefined);
-    assert.ok(mockStorage.store["vrbow_cache_fresh"] !== undefined);
+    assert.equal(mockStorage.store["paw_cache_old_stale"], undefined);
+    assert.ok(mockStorage.store["paw_cache_fresh"] !== undefined);
     assert.equal(mockStorage.store["unrelated_key"], "some_other_data");
 
     // Queue operation succeeded without delay

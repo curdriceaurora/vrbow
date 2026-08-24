@@ -20,7 +20,7 @@ knows how they compose.
 
 - Each file exposes a `create*` factory (`createBackoffLadder`, `createSearchCache`) or a
   set of pure functions (`search-response-parser.js`) in Node, and a matching
-  `globalThis.Vdp*` object in the extension. Creating an instance has no browser side
+  `globalThis.Paw*` object in the extension. Creating an instance has no browser side
   effects beyond what its own options ask for (e.g. `search-cache.js`'s optional storage
   maintenance interval).
 - `search-fetcher.js` re-exports every public name the original monolithic file exported

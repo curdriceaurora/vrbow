@@ -4,7 +4,7 @@
   if (typeof module !== "undefined" && module.exports) {
     module.exports = api;
   } else {
-    root.VdpSearchBadges = api;
+    root.PawSearchBadges = api;
   }
 })(globalThis, (root) => {
   function createSearchBadges(deps = {}) {
@@ -158,7 +158,7 @@
 
   // Instrumentation for #23's gating condition. LOCAL ONLY: these are in-memory
   // counters, readable from the devtools console of this isolated world via
-  // `__vdpSearchStats()`. PRIVACY.md commits to no remote transmission of
+  // `__pawSearchStats()`. PRIVACY.md commits to no remote transmission of
   // browsing activity or analytics, so they are never written to
   // chrome.storage, never attached to a request, and never reported anywhere.
   const MAX_DEPTH_SAMPLES = 200;
@@ -266,7 +266,7 @@
       if (propertyIds.length === 40) break;
     }
     try {
-      window.dispatchEvent(new CustomEvent("vdp-search-apollo-request", { detail: { propertyIds, requestId } }));
+      window.dispatchEvent(new CustomEvent("paw-search-apollo-request", { detail: { propertyIds, requestId } }));
     } catch (e) {
       return null;
     }
@@ -278,7 +278,7 @@
 
   function trySearchApolloFastPath(propId) {
     if (!propId) return null;
-    const fetcher = globalThis.VdpSearchFetcher;
+    const fetcher = globalThis.PawSearchFetcher;
     if (!fetcher) return null;
     discoveredSearchPropIds.add(propId);
     const payload = requestSearchApolloData();
@@ -297,7 +297,7 @@
 
     try {
       const fast = trySearchApolloFastPath(propId);
-      if (fast && globalThis.VdpSearchFetcher?.hasConcretePolicy?.(fast.policy)) {
+      if (fast && globalThis.PawSearchFetcher?.hasConcretePolicy?.(fast.policy)) {
         const isRichOrDefinitive = fast.policy.petsAllowed === false ||
           fast.policy.maxDogs !== null ||
           fast.policy.weightLimit !== null ||
@@ -306,16 +306,16 @@
 
         if (isRichOrDefinitive) {
           activeQueue.setCached(propId, fast, { persist: false }).catch(() => {}).finally(() => {
-            if (searchQueue && searchQueue === activeQueue && document.querySelector(`[data-vdp-prop-id="${propId}"]`)) {
+            if (searchQueue && searchQueue === activeQueue && document.querySelector(`[data-paw-prop-id="${propId}"]`)) {
               activeQueue.enqueue(propId, url, priority);
             }
           });
           return;
         } else {
           // Preliminary instant render: paint preliminary badge immediately without blocking rich listing fetch
-          const card = document.querySelector(`[data-vdp-prop-id="${propId}"]`);
-          const badge = card?.querySelector(".vdp-search-badge");
-          if (badge && badge.dataset.vdpStatus === "loading") {
+          const card = document.querySelector(`[data-paw-prop-id="${propId}"]`);
+          const badge = card?.querySelector(".paw-search-badge");
+          if (badge && badge.dataset.pawStatus === "loading") {
             updateBadgeUi(badge, fast);
           }
         }
@@ -347,8 +347,8 @@
   }
 
   function getListingValidation(urlStr) {
-    if (globalThis.VdpSearchFetcher?.validateListingUrl) {
-      return globalThis.VdpSearchFetcher.validateListingUrl(urlStr, location.href);
+    if (globalThis.PawSearchFetcher?.validateListingUrl) {
+      return globalThis.PawSearchFetcher.validateListingUrl(urlStr, location.href);
     }
     try {
       const u = new URL(urlStr, location.href);
@@ -380,17 +380,17 @@
   }
 
   function initSearchManager() {
-    globalThis.__vdpSearchStats = getSearchStats;
-    if (!globalThis.VdpSearchFetcher) return;
+    globalThis.__pawSearchStats = getSearchStats;
+    if (!globalThis.PawSearchFetcher) return;
     if (!searchQueue) {
-      searchQueue = globalThis.VdpSearchFetcher.createSearchFetchQueue({
+      searchQueue = globalThis.PawSearchFetcher.createSearchFetchQueue({
         storage: createSafeStorageWrapper()
       });
     }
     if (!searchTooltipEl) {
       searchTooltipEl = document.createElement("div");
-      searchTooltipEl.id = "vdp-search-tooltip";
-      searchTooltipEl.className = "vdp-search-tooltip";
+      searchTooltipEl.id = "paw-search-tooltip";
+      searchTooltipEl.className = "paw-search-tooltip";
       searchTooltipEl.setAttribute("role", "dialog");
       searchTooltipEl.setAttribute("aria-label", "Dog policy");
       searchTooltipEl.setAttribute("aria-hidden", "true");
@@ -447,35 +447,35 @@
           if (entry.isIntersecting) {
             // I3: in-view state is read by the recycle path, which must not
             // enqueue for a card the user cannot see.
-            card._vdpInView = true;
-            if (card._vdpDwellTimer) {
-              clearTimeout(card._vdpDwellTimer);
-              card._vdpDwellTimer = null;
+            card._pawInView = true;
+            if (card._pawDwellTimer) {
+              clearTimeout(card._pawDwellTimer);
+              card._pawDwellTimer = null;
             }
             // Dwell debounce: only enqueue after card remains in viewport for
             // VIEWPORT_DWELL_MS (plus this card's own jitter).
             const dwellMs = VIEWPORT_DWELL_MS + Math.random() * VIEWPORT_DWELL_JITTER_MS;
-            card._vdpDwellTimer = setTimeout(() => {
-              card._vdpDwellTimer = null;
-              const propId = card.getAttribute("data-vdp-prop-id");
-              const fetchUrl = card.getAttribute("data-vdp-fetch-url") || card.getAttribute("data-vdp-url");
+            card._pawDwellTimer = setTimeout(() => {
+              card._pawDwellTimer = null;
+              const propId = card.getAttribute("data-paw-prop-id");
+              const fetchUrl = card.getAttribute("data-paw-fetch-url") || card.getAttribute("data-paw-url");
               if (propId && fetchUrl && searchQueue && card.isConnected) {
                 enqueueSearch(propId, fetchUrl, "normal");
               }
             }, dwellMs);
           } else {
-            card._vdpInView = false;
+            card._pawInView = false;
             // Scrolled out of viewport before dwell threshold: cancel background request
-            if (card._vdpDwellTimer) {
-              clearTimeout(card._vdpDwellTimer);
-              card._vdpDwellTimer = null;
+            if (card._pawDwellTimer) {
+              clearTimeout(card._pawDwellTimer);
+              card._pawDwellTimer = null;
             }
             // I8b: the timer is only half of it. Once the dwell has elapsed the
             // work lives in the queue, so a card that leaves the viewport must
             // also withdraw its queued item. remove() is a no-op for an id that
             // is already in flight, which is the correct boundary: that request
             // is on the wire and cancelling it buys nothing.
-            const propId = card.getAttribute("data-vdp-prop-id");
+            const propId = card.getAttribute("data-paw-prop-id");
             if (propId && searchQueue && typeof searchQueue.remove === "function") {
               if (searchQueue.remove(propId)) {
                 searchStats.prunedOffscreen++;
@@ -537,23 +537,23 @@
       searchCardObserver.disconnect();
       searchCardObserver = null;
     }
-    const badges = document.querySelectorAll(".vdp-search-badge");
+    const badges = document.querySelectorAll(".paw-search-badge");
     for (const b of badges) b.remove();
-    const cards = document.querySelectorAll("[data-vdp-prop-id]");
+    const cards = document.querySelectorAll("[data-paw-prop-id]");
     for (const c of cards) {
-      if (c._vdpDwellTimer) {
-        clearTimeout(c._vdpDwellTimer);
-        c._vdpDwellTimer = null;
+      if (c._pawDwellTimer) {
+        clearTimeout(c._pawDwellTimer);
+        c._pawDwellTimer = null;
       }
-      if (c._vdpUnsub) {
-        c._vdpUnsub();
-        c._vdpUnsub = null;
+      if (c._pawUnsub) {
+        c._pawUnsub();
+        c._pawUnsub = null;
       }
-      c._vdpInView = false;
-      c.removeAttribute("data-vdp-prop-id");
-      c.removeAttribute("data-vdp-url");
-      c.removeAttribute("data-vdp-fetch-url");
-      c.removeAttribute("data-vdp-nav-url");
+      c._pawInView = false;
+      c.removeAttribute("data-paw-prop-id");
+      c.removeAttribute("data-paw-url");
+      c.removeAttribute("data-paw-fetch-url");
+      c.removeAttribute("data-paw-nav-url");
     }
     if (searchTooltipEl) {
       searchTooltipEl.remove();
@@ -597,23 +597,23 @@
     let pruned = 0;
     for (const [propId, card] of Array.from(trackedSearchCards.entries())) {
       const boundId = card && typeof card.getAttribute === "function"
-        ? card.getAttribute("data-vdp-prop-id")
+        ? card.getAttribute("data-paw-prop-id")
         : null;
       if (card && card.isConnected && boundId === propId) continue;
 
       // Only tear down the card's subscription when the card is still bound to
-      // THIS id. If the node was recycled to a different property, _vdpUnsub
+      // THIS id. If the node was recycled to a different property, _pawUnsub
       // belongs to the new binding and the old one was already released.
       if (card && boundId === propId) {
-        if (card._vdpUnsub) {
-          try { card._vdpUnsub(); } catch {}
-          card._vdpUnsub = null;
+        if (card._pawUnsub) {
+          try { card._pawUnsub(); } catch {}
+          card._pawUnsub = null;
         }
-        if (card._vdpDwellTimer) {
-          clearTimeout(card._vdpDwellTimer);
-          card._vdpDwellTimer = null;
+        if (card._pawDwellTimer) {
+          clearTimeout(card._pawDwellTimer);
+          card._pawDwellTimer = null;
         }
-        card._vdpInView = false;
+        card._pawInView = false;
         if (searchCardObserver) {
           try { searchCardObserver.unobserve(card); } catch {}
         }
@@ -649,30 +649,30 @@
     if (!listing) return;
     const { propertyId: propId, fetchUrl, navigationUrl } = listing;
 
-    const prevId = card.getAttribute("data-vdp-prop-id");
-    let badge = card.querySelector(".vdp-search-badge");
+    const prevId = card.getAttribute("data-paw-prop-id");
+    let badge = card.querySelector(".paw-search-badge");
 
     // Same property, same badge, subscription intact: nothing to rewire.
-    // A missing _vdpUnsub means a prune tore this card down while it was out of
+    // A missing _pawUnsub means a prune tore this card down while it was out of
     // the DOM, so fall through and re-subscribe — the propId is unchanged, so
     // the fall-through re-binds without issuing a new request.
-    if (prevId === propId && badge && card._vdpUnsub) {
-      card.setAttribute("data-vdp-fetch-url", fetchUrl);
-      card.setAttribute("data-vdp-nav-url", navigationUrl);
-      card.setAttribute("data-vdp-url", fetchUrl);
+    if (prevId === propId && badge && card._pawUnsub) {
+      card.setAttribute("data-paw-fetch-url", fetchUrl);
+      card.setAttribute("data-paw-nav-url", navigationUrl);
+      card.setAttribute("data-paw-url", fetchUrl);
       trackedSearchCards.set(propId, card);
       trackCardPropId(propId, card);
       return;
     }
 
     // Clean up previous subscription and dwell timer if card was recycled
-    if (card._vdpDwellTimer) {
-      clearTimeout(card._vdpDwellTimer);
-      card._vdpDwellTimer = null;
+    if (card._pawDwellTimer) {
+      clearTimeout(card._pawDwellTimer);
+      card._pawDwellTimer = null;
     }
-    if (card._vdpUnsub) {
-      card._vdpUnsub();
-      card._vdpUnsub = null;
+    if (card._pawUnsub) {
+      card._pawUnsub();
+      card._pawUnsub = null;
     }
 
     // The property this node used to show is stale work now: withdraw its
@@ -688,10 +688,10 @@
       }
     }
 
-    card.setAttribute("data-vdp-prop-id", propId);
-    card.setAttribute("data-vdp-fetch-url", fetchUrl);
-    card.setAttribute("data-vdp-nav-url", navigationUrl);
-    card.setAttribute("data-vdp-url", fetchUrl);
+    card.setAttribute("data-paw-prop-id", propId);
+    card.setAttribute("data-paw-fetch-url", fetchUrl);
+    card.setAttribute("data-paw-nav-url", navigationUrl);
+    card.setAttribute("data-paw-url", fetchUrl);
     discoveredSearchPropIds.add(propId);
     trackedSearchCards.set(propId, card);
     trackCardPropId(propId, card);
@@ -704,15 +704,15 @@
 
     if (!badge) {
       badge = document.createElement("div");
-      badge.className = "vdp-search-badge vdp-badge-loading";
+      badge.className = "paw-search-badge paw-badge-loading";
       badge.setAttribute("tabindex", "0");
       badge.setAttribute("role", "button");
       badge.setAttribute("aria-haspopup", "dialog");
-      badge.setAttribute("aria-controls", "vdp-search-tooltip");
+      badge.setAttribute("aria-controls", "paw-search-tooltip");
       badge.setAttribute("aria-expanded", "false");
       badge.setAttribute("aria-label", "Checking pet policy");
-      badge.dataset.vdpStatus = "loading";
-      badge.dataset.vdpText = "Checking pet policy...";
+      badge.dataset.pawStatus = "loading";
+      badge.dataset.pawText = "Checking pet policy...";
       badge.textContent = "⏳ Checking pet policy...";
 
       const targetContainer = resolveBadgeContainer(card);
@@ -726,7 +726,7 @@
       // container happened to be a block; the slot makes the badge's width
       // independent of whether the host is block, flex-row, flex-column or grid.
       const slot = document.createElement("div");
-      slot.className = "vdp-badge-slot";
+      slot.className = "paw-badge-slot";
       slot.appendChild(badge);
       targetContainer.appendChild(slot);
 
@@ -734,25 +734,25 @@
       badge.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
-        const currentId = card.getAttribute("data-vdp-prop-id");
-        const currentFetchUrl = card.getAttribute("data-vdp-fetch-url") || card.getAttribute("data-vdp-url");
-        const currentNavUrl = card.getAttribute("data-vdp-nav-url") || currentFetchUrl;
+        const currentId = card.getAttribute("data-paw-prop-id");
+        const currentFetchUrl = card.getAttribute("data-paw-fetch-url") || card.getAttribute("data-paw-url");
+        const currentNavUrl = card.getAttribute("data-paw-nav-url") || currentFetchUrl;
         if (currentId && currentFetchUrl) {
           showTooltipForBadge(badge, currentId, currentNavUrl, false);
         }
       });
       badge.addEventListener("mouseenter", () => {
-        const currentId = card.getAttribute("data-vdp-prop-id");
-        const currentFetchUrl = card.getAttribute("data-vdp-fetch-url") || card.getAttribute("data-vdp-url");
-        const currentNavUrl = card.getAttribute("data-vdp-nav-url") || currentFetchUrl;
+        const currentId = card.getAttribute("data-paw-prop-id");
+        const currentFetchUrl = card.getAttribute("data-paw-fetch-url") || card.getAttribute("data-paw-url");
+        const currentNavUrl = card.getAttribute("data-paw-nav-url") || currentFetchUrl;
         if (currentId && currentFetchUrl) onBadgeHover(badge, currentId, currentFetchUrl, currentNavUrl, true);
       });
       badge.addEventListener("mouseleave", onBadgeLeave);
       badge.addEventListener("focus", () => {
         if (isDismissingDialog) return;
-        const currentId = card.getAttribute("data-vdp-prop-id");
-        const currentFetchUrl = card.getAttribute("data-vdp-fetch-url") || card.getAttribute("data-vdp-url");
-        const currentNavUrl = card.getAttribute("data-vdp-nav-url") || currentFetchUrl;
+        const currentId = card.getAttribute("data-paw-prop-id");
+        const currentFetchUrl = card.getAttribute("data-paw-fetch-url") || card.getAttribute("data-paw-url");
+        const currentNavUrl = card.getAttribute("data-paw-nav-url") || currentFetchUrl;
         if (currentId && currentFetchUrl) onBadgeHover(badge, currentId, currentFetchUrl, currentNavUrl, true);
       });
       badge.addEventListener("blur", (e) => {
@@ -762,9 +762,9 @@
       badge.addEventListener("keydown", (e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          const currentId = card.getAttribute("data-vdp-prop-id");
-          const currentFetchUrl = card.getAttribute("data-vdp-fetch-url") || card.getAttribute("data-vdp-url");
-          const currentNavUrl = card.getAttribute("data-vdp-nav-url") || currentFetchUrl;
+          const currentId = card.getAttribute("data-paw-prop-id");
+          const currentFetchUrl = card.getAttribute("data-paw-fetch-url") || card.getAttribute("data-paw-url");
+          const currentNavUrl = card.getAttribute("data-paw-nav-url") || currentFetchUrl;
           if (currentId && currentFetchUrl) {
             showTooltipForBadge(badge, currentId, currentNavUrl, true);
           }
@@ -777,22 +777,22 @@
       if (activeTooltipTarget === badge || activeTooltipPropId === prevId) {
         hideTooltip();
       }
-      badge.dataset.vdpStatus = "loading";
-      badge.dataset.vdpText = "Checking pet policy...";
-      badge.className = "vdp-search-badge vdp-badge-loading";
+      badge.dataset.pawStatus = "loading";
+      badge.dataset.pawText = "Checking pet policy...";
+      badge.className = "paw-search-badge paw-badge-loading";
       badge.textContent = "⏳ Checking pet policy...";
       badge.setAttribute("aria-label", "Checking pet policy");
       // I3: a recycled node inherits the viewport state of the node, not of the
       // property. Enqueue only when that node is actually on screen — an
       // off-screen recycle re-binds silently and waits for the dwell gate to
       // fire when the card is scrolled into view.
-      if (card._vdpInView === true) {
+      if (card._pawInView === true) {
         enqueueSearch(propId, fetchUrl, "normal");
       }
     }
 
-    card._vdpUnsub = searchQueue?.subscribe(propId, (data) => {
-      if (card.getAttribute("data-vdp-prop-id") === propId && badge.isConnected) {
+    card._pawUnsub = searchQueue?.subscribe(propId, (data) => {
+      if (card.getAttribute("data-paw-prop-id") === propId && badge.isConnected) {
         updateBadgeUi(badge, data);
         // Live dialog update: if dialog is currently open for this badge, rerender in place
         if (
@@ -801,7 +801,7 @@
           searchTooltipEl &&
           searchTooltipEl.style.display !== "none"
         ) {
-          const navUrl = card.getAttribute("data-vdp-nav-url") || card.getAttribute("data-vdp-url");
+          const navUrl = card.getAttribute("data-paw-nav-url") || card.getAttribute("data-paw-url");
           renderTooltipContent(data, navUrl, propId, false);
           positionTooltip(badge);
         }
@@ -809,7 +809,7 @@
     });
 
     searchQueue?.getCached(propId, fetchUrl).then((cached) => {
-      if (cached && card.getAttribute("data-vdp-prop-id") === propId) {
+      if (cached && card.getAttribute("data-paw-prop-id") === propId) {
         updateBadgeUi(badge, cached);
       }
     });
@@ -818,7 +818,7 @@
   function updateBadgeUi(badge, data) {
     if (!badge || !data) return;
 
-    const extractLib = globalThis.VDPExtract || globalThis.VdpExtract;
+    const extractLib = globalThis.PawExtract;
     let badgeInfo = null;
 
     if (data.status === "ok" && data.policy && extractLib?.deriveSearchBadge) {
@@ -828,23 +828,23 @@
         statusKey: "capped",
         icon: "🐾",
         text: "Hover or open listing",
-        className: "vdp-search-badge vdp-badge-capped",
+        className: "paw-search-badge paw-badge-capped",
       };
     } else {
       badgeInfo = {
         statusKey: data.status || "unknown",
         icon: "🐾",
         text: "Check pet rules on listing",
-        className: "vdp-search-badge vdp-badge-unknown",
+        className: "paw-search-badge paw-badge-unknown",
       };
     }
 
-    if (badge.dataset.vdpStatus === badgeInfo.statusKey && badge.dataset.vdpText === badgeInfo.text) return;
-    badge.dataset.vdpStatus = badgeInfo.statusKey;
-    badge.dataset.vdpText = badgeInfo.text;
+    if (badge.dataset.pawStatus === badgeInfo.statusKey && badge.dataset.pawText === badgeInfo.text) return;
+    badge.dataset.pawStatus = badgeInfo.statusKey;
+    badge.dataset.pawText = badgeInfo.text;
     // Report where this result came from: the search page's own Apollo
     // state (no listing fetch) or a listing-page fetch.
-    badge.dataset.vdpSource = data.status === "ok"
+    badge.dataset.pawSource = data.status === "ok"
       ? (data._source || "listing-fetch")
       : (data.status || "unknown");
     badge.className = badgeInfo.className;
@@ -852,10 +852,10 @@
 
     badge.textContent = "";
     const iconSpan = document.createElement("span");
-    iconSpan.className = "vdp-badge-icon";
+    iconSpan.className = "paw-badge-icon";
     iconSpan.textContent = badgeInfo.icon;
     const textSpan = document.createElement("span");
-    textSpan.className = "vdp-badge-text";
+    textSpan.className = "paw-badge-text";
     textSpan.textContent = " " + badgeInfo.text;
     badge.appendChild(iconSpan);
     badge.appendChild(textSpan);
@@ -863,10 +863,10 @@
 
   function onBadgeHover(badge, propId, fetchUrl, navUrl, isHighPriority) {
     clearTooltipLeaveTimer();
-    const parentCard = badge.closest ? badge.closest("[data-vdp-prop-id]") : null;
-    if (parentCard && parentCard._vdpDwellTimer) {
-      clearTimeout(parentCard._vdpDwellTimer);
-      parentCard._vdpDwellTimer = null;
+    const parentCard = badge.closest ? badge.closest("[data-paw-prop-id]") : null;
+    if (parentCard && parentCard._pawDwellTimer) {
+      clearTimeout(parentCard._pawDwellTimer);
+      parentCard._pawDwellTimer = null;
     }
     if (isHighPriority && searchQueue) {
       enqueueSearch(propId, fetchUrl, "high");
@@ -888,12 +888,12 @@
 
     searchQueue?.getCached(propId, url).then((cached) => {
       // Async scope guard: verify active target, propId, element connectivity, and parent card propId
-      const parentCard = badge.closest ? badge.closest("[data-vdp-prop-id]") : null;
+      const parentCard = badge.closest ? badge.closest("[data-paw-prop-id]") : null;
       if (
         activeTooltipTarget !== badge ||
         activeTooltipPropId !== propId ||
         !badge.isConnected ||
-        (parentCard && parentCard.getAttribute("data-vdp-prop-id") !== propId)
+        (parentCard && parentCard.getAttribute("data-paw-prop-id") !== propId)
       ) {
         return;
       }
@@ -908,11 +908,11 @@
     searchTooltipEl.textContent = "";
 
     const header = document.createElement("div");
-    header.className = "vdp-tooltip-header";
+    header.className = "paw-tooltip-header";
     const titleSpan = document.createElement("span");
     titleSpan.textContent = "Dog policy";
     const closeBtn = document.createElement("button");
-    closeBtn.className = "vdp-tooltip-close";
+    closeBtn.className = "paw-tooltip-close";
     closeBtn.setAttribute("aria-label", "Close details");
     closeBtn.textContent = "×";
     closeBtn.addEventListener("click", () => {
@@ -928,16 +928,16 @@
 
     const addRow = (label, valueText, toneClass, valueLines = null) => {
       const row = document.createElement("div");
-      row.className = "vdp-tooltip-row";
+      row.className = "paw-tooltip-row";
       const lbl = document.createElement("span");
-      lbl.className = "vdp-tooltip-label";
+      lbl.className = "paw-tooltip-label";
       lbl.textContent = label;
       const val = document.createElement("span");
-      val.className = "vdp-tooltip-val" + (toneClass ? " " + toneClass : "");
+      val.className = "paw-tooltip-val" + (toneClass ? " " + toneClass : "");
       if (Array.isArray(valueLines) && valueLines.length > 0) {
         for (const line of valueLines) {
           const lineSpan = document.createElement("span");
-          lineSpan.className = "vdp-tooltip-val-line";
+          lineSpan.className = "paw-tooltip-val-line";
           lineSpan.textContent = line;
           val.appendChild(lineSpan);
         }
@@ -953,9 +953,9 @@
 
     if (!data || data.status === "loading") {
       const row = document.createElement("div");
-      row.className = "vdp-tooltip-row";
+      row.className = "paw-tooltip-row";
       const val = document.createElement("span");
-      val.className = "vdp-tooltip-val";
+      val.className = "paw-tooltip-val";
       val.textContent = "Checking the listing summary for pet rules...";
       row.appendChild(val);
       searchTooltipEl.appendChild(row);
@@ -965,11 +965,11 @@
 
       if (p.petsAllowed !== null) {
         const statusText = p.petsAllowed === true ? "Yes" : "No";
-        const statusTone = p.petsAllowed === true ? "vdp-tone-good" : "vdp-tone-bad";
+        const statusTone = p.petsAllowed === true ? "paw-tone-good" : "paw-tone-bad";
         addRow("Dogs allowed", statusText, statusTone);
         rowsAdded++;
       } else if (p.approvalRequired || p.restrictionsFound || (p.restrictionNoteCount && p.restrictionNoteCount > 0)) {
-        addRow("Pet policy", "Pet restrictions apply", "vdp-tone-warn");
+        addRow("Pet policy", "Pet restrictions apply", "paw-tone-warn");
         rowsAdded++;
       }
       if (p.maxDogs !== null) {
@@ -987,9 +987,9 @@
       const isTieredFee = p.fee?.tiered || (p.fee?.text && /\$0\s+(?:1st|first)/i.test(p.fee.text));
       if (isTieredFee) {
         if (p.fee?.text) {
-          addRow("Pet fee", p.fee.text, "vdp-tone-warn");
+          addRow("Pet fee", p.fee.text, "paw-tone-warn");
         } else {
-          addRow("Pet fee", "", "vdp-tone-warn", ["1st dog free", "subsequent fee applies"]);
+          addRow("Pet fee", "", "paw-tone-warn", ["1st dog free", "subsequent fee applies"]);
         }
         rowsAdded++;
       } else if (p.fee && p.fee.amount !== null) {
@@ -1004,7 +1004,7 @@
         rowsAdded++;
       } else if (p.fee) {
         const feeText = typeof p.fee === "string" ? p.fee : (p.fee.text || "Pet fee applies");
-        addRow("Pet fee", feeText, "vdp-tone-warn");
+        addRow("Pet fee", feeText, "paw-tone-warn");
         rowsAdded++;
       }
       if (p.deposit && p.deposit.amount !== null) {
@@ -1013,11 +1013,11 @@
         rowsAdded++;
       } else if (p.deposit) {
         const depText = typeof p.deposit === "string" ? p.deposit : (p.deposit.text || "Deposit applies");
-        addRow("Pet deposit", depText, "vdp-tone-warn");
+        addRow("Pet deposit", depText, "paw-tone-warn");
         rowsAdded++;
       }
       if (p.approvalRequired === true || p.preReg === true) {
-        addRow("Prior approval", "Required", "vdp-tone-warn");
+        addRow("Prior approval", "Required", "paw-tone-warn");
         rowsAdded++;
       }
 
@@ -1035,39 +1035,39 @@
 
       if (hasConflict) {
         const warnBox = document.createElement("div");
-        warnBox.className = "vdp-tooltip-notes vdp-tone-warn";
+        warnBox.className = "paw-tooltip-notes paw-tone-warn";
         warnBox.innerHTML = "⚠️ <strong>Some pet-policy details conflict.</strong><br>Open the listing to verify the complete rules.";
         searchTooltipEl.appendChild(warnBox);
       }
     } else if (data.status === "rate_limited") {
       const row = document.createElement("div");
-      row.className = "vdp-tooltip-row";
+      row.className = "paw-tooltip-row";
       const val = document.createElement("span");
-      val.className = "vdp-tooltip-val";
+      val.className = "paw-tooltip-val";
       val.textContent = "Pet policy lookup paused due to request limits.";
       row.appendChild(val);
       searchTooltipEl.appendChild(row);
     } else if (data.status === "capped") {
       const row = document.createElement("div");
-      row.className = "vdp-tooltip-row";
+      row.className = "paw-tooltip-row";
       const val = document.createElement("span");
-      val.className = "vdp-tooltip-val";
+      val.className = "paw-tooltip-val";
       val.textContent = "Background check paused to protect session limits.";
       row.appendChild(val);
       searchTooltipEl.appendChild(row);
     } else {
       // Unavailable / Fallback (unknown, timeout, error)
       const row = document.createElement("div");
-      row.className = "vdp-tooltip-row";
+      row.className = "paw-tooltip-row";
       const val = document.createElement("span");
-      val.className = "vdp-tooltip-val";
+      val.className = "paw-tooltip-val";
       val.textContent = "Pet policy details were not available in the search result.";
       row.appendChild(val);
       searchTooltipEl.appendChild(row);
     }
 
     const footer = document.createElement("div");
-    footer.className = "vdp-tooltip-footer";
+    footer.className = "paw-tooltip-footer";
     const link = document.createElement("a");
     const registry = siteRegistry;
     if (typeof url === "string" && ((registry && registry.isListingUrl(url, location.href)) || url.startsWith("/"))) {
@@ -1105,14 +1105,14 @@
 
     searchTooltipEl.style.top = `${top}px`;
     searchTooltipEl.style.left = `${left}px`;
-    searchTooltipEl.classList.add("vdp-tooltip-visible");
+    searchTooltipEl.classList.add("paw-tooltip-visible");
     searchTooltipEl.setAttribute("aria-hidden", "false");
   }
 
   function hideTooltip() {
     clearTooltipLeaveTimer();
     if (searchTooltipEl) {
-      searchTooltipEl.classList.remove("vdp-tooltip-visible");
+      searchTooltipEl.classList.remove("paw-tooltip-visible");
       searchTooltipEl.setAttribute("aria-hidden", "true");
       searchTooltipEl.style.display = "none";
       if (activeTooltipTarget) {

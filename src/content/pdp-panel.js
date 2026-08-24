@@ -4,13 +4,13 @@
   if (typeof module !== "undefined" && module.exports) {
     module.exports = api;
   } else {
-    root.VdpPdpPanel = api;
+    root.PawPdpPanel = api;
   }
 })(globalThis, (root) => {
   function createPdpPanel(deps = {}) {
-    const PANEL_ID = "vdp-panel";
-    const { getSentences, isPetRelated, buildCorpus, extractPolicy } = root.VDPExtract;
-    const { escapeHtml } = root.VdpFormatters;
+    const PANEL_ID = "paw-panel";
+    const { getSentences, isPetRelated, buildCorpus, extractPolicy } = root.PawExtract;
+    const { escapeHtml } = root.PawFormatters;
     const siteRegistry = deps.siteRegistry;
     const getListingIdFromUrl = deps.getListingIdFromUrl;
     const isListingUrl = deps.isListingUrl;
@@ -232,7 +232,7 @@
   // this property. Scoping to <main> isn't enough; what separates it from
   // listing prose is that it lives in form controls, which listing prose
   // never does. So walk text nodes and skip those subtrees.
-  const DOM_EXCLUDE = 'label, form, button, select, textarea, input, nav, header, footer, script, style, [role="dialog"], [role="navigation"], [role="menu"], #vdp-panel';
+  const DOM_EXCLUDE = 'label, form, button, select, textarea, input, nav, header, footer, script, style, [role="dialog"], [role="navigation"], [role="menu"], #paw-panel';
 
   // The site-specific categories live in site-registry.js's
   // getPdpSectionConfig (getSearchCardSelector above follows the same
@@ -374,8 +374,8 @@
     if (!el) el = findHeadingFor(source);
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
-      el.classList.add("vdp-highlight");
-      setTimeout(() => el.classList.remove("vdp-highlight"), 2200);
+      el.classList.add("paw-highlight");
+      setTimeout(() => el.classList.remove("paw-highlight"), 2200);
     }
   }
 
@@ -420,38 +420,38 @@
         gap = Math.max(10, Math.min(16, Math.floor((freeSpaceRight - BESIDE_WIDTH) / 2)));
         panel.style.left = `${Math.round(rect.right + gap)}px`;
         panel.style.right = "auto";
-        panel.classList.add("vdp-beside");
+        panel.classList.add("paw-beside");
       }
     }
 
     if (!isBeside) {
       panel.style.left = "auto";
       panel.style.right = "16px";
-      panel.classList.remove("vdp-beside");
+      panel.classList.remove("paw-beside");
     }
 
     const currentMode = isBeside ? "beside" : "constrained";
     const modeChanged = lastPanelMode !== currentMode;
     lastPanelMode = currentMode;
 
-    const header = panel.querySelector(".vdp-header");
+    const header = panel.querySelector(".paw-header");
 
     if (modeChanged) {
       if (isBeside) {
-        panel.classList.remove("vdp-collapsed");
+        panel.classList.remove("paw-collapsed");
         if (header) header.setAttribute("aria-expanded", "true");
         lastUserCollapsed = false;
       } else {
-        panel.classList.add("vdp-collapsed");
+        panel.classList.add("paw-collapsed");
         if (header) header.setAttribute("aria-expanded", "false");
         lastUserCollapsed = true;
       }
     } else if (isInitial && lastUserCollapsed !== null) {
       if (lastUserCollapsed) {
-        panel.classList.add("vdp-collapsed");
+        panel.classList.add("paw-collapsed");
         if (header) header.setAttribute("aria-expanded", "false");
       } else {
-        panel.classList.remove("vdp-collapsed");
+        panel.classList.remove("paw-collapsed");
         if (header) header.setAttribute("aria-expanded", "true");
       }
     }
@@ -527,24 +527,24 @@
   // freeform extracted text on commas, since a comma there isn't
   // reliably a clause boundary.
   function row(label, value, tone, snippet, source, alternates, valueLines) {
-    const toneClass = tone ? `vdp-tone-${tone}` : "";
+    const toneClass = tone ? `paw-tone-${tone}` : "";
     const jumpAttr = snippet ? `data-snippet="${encodeURIComponent(snippet)}" data-source="${encodeURIComponent(source || "")}"` : "";
     const jumpBtn = snippet
-      ? `<button type="button" class="vdp-jump" ${jumpAttr} title="Jump to where this was found in ${escapeHtml(source || "the listing")}">${escapeHtml(shortSourceLabel(source))} <span class="vdp-jump-arrow">↗</span></button>`
+      ? `<button type="button" class="paw-jump" ${jumpAttr} title="Jump to where this was found in ${escapeHtml(source || "the listing")}">${escapeHtml(shortSourceLabel(source))} <span class="paw-jump-arrow">↗</span></button>`
       : "";
     const altHtml =
       alternates && alternates.length
-        ? `<div class="vdp-alt">⚠ Listing also states elsewhere: ${alternates
+        ? `<div class="paw-alt">⚠ Listing also states elsewhere: ${alternates
             .map((a) => `<strong>${escapeHtml(a.value)}</strong> (${escapeHtml(a.source || "")})`)
             .join("; ")}</div>`
         : "";
     const valueHtml =
       valueLines && valueLines.length > 1
-        ? valueLines.map((line) => `<span class="vdp-value-line">${escapeHtml(line)}</span>`).join("")
+        ? valueLines.map((line) => `<span class="paw-value-line">${escapeHtml(line)}</span>`).join("")
         : escapeHtml(value);
-    return `<div class="vdp-row">
-      <span class="vdp-label">${label}</span>
-      <span class="vdp-value ${toneClass}">${valueHtml}${altHtml}</span>
+    return `<div class="paw-row">
+      <span class="paw-label">${label}</span>
+      <span class="paw-value ${toneClass}">${valueHtml}${altHtml}</span>
       ${jumpBtn}
     </div>`;
   }
@@ -561,11 +561,11 @@
       // We DO have an answer (pets are allowed) — just no fine print.
       // Showing the plain "weren't stated" wording here (as if nothing
       // at all were known) would read as broken on a listing that
-      // affirmatively said yes. vdp-tone-good is the same global tone
+      // affirmatively said yes. paw-tone-good is the same global tone
       // utility used elsewhere (badges, header) — no new CSS needed.
       return {
         text: "Allowed, no additional restrictions listed. Max dogs, weight limit, fee, and pre-registration weren't stated anywhere on this listing.",
-        toneClass: " vdp-tone-good",
+        toneClass: " paw-tone-good",
       };
     }
     // petsAllowed itself isn't confirmed true — genuinely no answer, not
@@ -628,7 +628,7 @@
       rowsHtml = row("Policy", "No pets allowed", "bad", raw.petsAllowedSnippet, raw.petsAllowedSource);
     } else if (!raw.found && !policy.restrictionsFound) {
       headlineTone = "unknown";
-      rowsHtml = `<div class="vdp-empty">This page didn't mention pets/dogs in its listing data or visible text. Try Rescan after the page fully loads, or check House Rules manually.</div>`;
+      rowsHtml = `<div class="paw-empty">This page didn't mention pets/dogs in its listing data or visible text. Try Rescan after the page fully loads, or check House Rules manually.</div>`;
     } else {
       headlineTone = policy.petsAllowed === true ? "good" : "unknown";
 
@@ -650,12 +650,12 @@
 
       if (isFullySparse) {
         const { text, toneClass } = sparseStateMessage(policy.petsAllowed);
-        rowsHtml = `<div class="vdp-unconfirmed">
-          <p class="vdp-unconfirmed-text${toneClass}">${text}</p>
-          ${sourceBadge ? `<span class="vdp-unconfirmed-src">${escapeHtml(sourceBadge)}</span>` : ""}
+        rowsHtml = `<div class="paw-unconfirmed">
+          <p class="paw-unconfirmed-text${toneClass}">${text}</p>
+          ${sourceBadge ? `<span class="paw-unconfirmed-src">${escapeHtml(sourceBadge)}</span>` : ""}
         </div>`;
       } else {
-        rowsHtml += `<div class="vdp-group-hd">Dog limits</div>`;
+        rowsHtml += `<div class="paw-group-hd">Dog limits</div>`;
         rowsHtml += row(
           "Max dogs",
           policy.maxDogs !== null ? `${policy.maxDogs}` : "Not specified",
@@ -672,7 +672,7 @@
           raw.weightSource,
           raw.weightAlternates
         );
-        rowsHtml += `<div class="vdp-group-hd">Cost &amp; approval</div>`;
+        rowsHtml += `<div class="paw-group-hd">Cost &amp; approval</div>`;
         let feePerStr = "";
         if (policy.fee) {
           if (policy.fee.perPet && policy.fee.period && policy.fee.period !== "unknown" && policy.fee.period !== "pet") {
@@ -698,8 +698,8 @@
             feeValueLines = ["1st dog free", "subsequent fee applies"];
           }
         } else if (hasFeeAmount) {
-          feeDisplay = typeof VDPExtract?.formatCurrencyDisplay === "function"
-            ? `${VDPExtract.formatCurrencyDisplay(policy.fee.amount, policy.fee.currency)}${feePerStr}`
+          feeDisplay = typeof PawExtract?.formatCurrencyDisplay === "function"
+            ? `${PawExtract.formatCurrencyDisplay(policy.fee.amount, policy.fee.currency)}${feePerStr}`
             : `$${policy.fee.amount}${feePerStr}`;
         } else {
           feeDisplay = raw.fee || "Not specified";
@@ -716,7 +716,7 @@
         );
         if (policy.deposit || raw.deposit) {
           const depDisplay = policy.deposit && policy.deposit.amount !== null
-            ? (typeof VDPExtract?.formatCurrencyDisplay === "function" ? VDPExtract.formatCurrencyDisplay(policy.deposit.amount, policy.deposit.currency) : `$${policy.deposit.amount}`)
+            ? (typeof PawExtract?.formatCurrencyDisplay === "function" ? PawExtract.formatCurrencyDisplay(policy.deposit.amount, policy.deposit.currency) : `$${policy.deposit.amount}`)
             : raw.deposit;
           rowsHtml += row("Refundable deposit", depDisplay, "warn", raw.depositSnippet, raw.depositSource);
         }
@@ -747,14 +747,14 @@
             }
             group.quotes.push(n.text);
           }
-          rowsHtml += `<div class="vdp-other-toggle">Other pet notes (${notes.length}) ▾</div>
-            <div class="vdp-other-list">
+          rowsHtml += `<div class="paw-other-toggle">Other pet notes (${notes.length}) ▾</div>
+            <div class="paw-other-list">
               ${groups
                 .map(
                   (g) =>
-                    `<div class="vdp-other-item">${g.quotes
-                      .map((q) => `<span class="vdp-other-quote">"${escapeHtml(q)}"</span>`)
-                      .join("")}<span class="vdp-other-source">— ${escapeHtml(g.source)}</span></div>`
+                    `<div class="paw-other-item">${g.quotes
+                      .map((q) => `<span class="paw-other-quote">"${escapeHtml(q)}"</span>`)
+                      .join("")}<span class="paw-other-source">— ${escapeHtml(g.source)}</span></div>`
                 )
                 .join("")}
             </div>`;
@@ -763,16 +763,16 @@
     }
 
     return `
-      <div class="vdp-header vdp-tone-${headlineTone}" tabindex="0" role="button" aria-expanded="true" aria-label="Toggle dog policy details">
-        <span class="vdp-title">${headline}</span>
-        <div class="vdp-header-btns">
-          <button type="button" class="vdp-rescan" title="Rescan page">↻</button>
-          <button type="button" class="vdp-close" title="Close">×</button>
+      <div class="paw-header paw-tone-${headlineTone}" tabindex="0" role="button" aria-expanded="true" aria-label="Toggle dog policy details">
+        <span class="paw-title">${headline}</span>
+        <div class="paw-header-btns">
+          <button type="button" class="paw-rescan" title="Rescan page">↻</button>
+          <button type="button" class="paw-close" title="Close">×</button>
         </div>
       </div>
-      <div class="vdp-body">
+      <div class="paw-body">
         ${rowsHtml}
-        ${!isFullySparse && sourceBadge ? `<div class="vdp-source-badge">${sourceBadge}</div>` : ""}
+        ${!isFullySparse && sourceBadge ? `<div class="paw-source-badge">${sourceBadge}</div>` : ""}
       </div>
     `;
   }
@@ -796,29 +796,29 @@
     };
     window.addEventListener("resize", panelResizeListener);
 
-    panel.querySelector(".vdp-close").addEventListener("click", () => removePanel());
-    panel.querySelector(".vdp-rescan").addEventListener("click", () => scan(true));
-    panel.querySelectorAll(".vdp-jump").forEach((btn) => {
+    panel.querySelector(".paw-close").addEventListener("click", () => removePanel());
+    panel.querySelector(".paw-rescan").addEventListener("click", () => scan(true));
+    panel.querySelectorAll(".paw-jump").forEach((btn) => {
       btn.addEventListener("click", () => {
         const snippet = decodeURIComponent(btn.getAttribute("data-snippet"));
         const source = decodeURIComponent(btn.getAttribute("data-source") || "");
         jumpToSnippet(snippet, source);
       });
     });
-    const otherToggle = panel.querySelector(".vdp-other-toggle");
+    const otherToggle = panel.querySelector(".paw-other-toggle");
     if (otherToggle) {
       otherToggle.addEventListener("click", () => {
-        panel.querySelector(".vdp-other-list").classList.toggle("vdp-visible");
+        panel.querySelector(".paw-other-list").classList.toggle("paw-visible");
       });
     }
 
-    const header = panel.querySelector(".vdp-header");
+    const header = panel.querySelector(".paw-header");
     const toggleCollapse = (e) => {
       if (e.target.closest("button")) return;
       if (e.type === "keydown" && e.key !== "Enter" && e.key !== " ") return;
       if (e.type === "keydown") e.preventDefault();
-      panel.classList.toggle("vdp-collapsed");
-      const isCollapsed = panel.classList.contains("vdp-collapsed");
+      panel.classList.toggle("paw-collapsed");
+      const isCollapsed = panel.classList.contains("paw-collapsed");
       lastUserCollapsed = isCollapsed;
       header.setAttribute("aria-expanded", isCollapsed ? "false" : "true");
     };
@@ -828,7 +828,7 @@
 
   // ---------- scan orchestration ----------
 
-  // Vrbo's structured PDP data arrives via the vdp-apollo-data event from
+  // Vrbo's structured PDP data arrives via the paw-apollo-data event from
   // page-bridge.js (a MAIN-world bridge, needed because window.__APOLLO_STATE__
   // isn't reachable from the isolated world). Airbnb's data is plain DOM
   // text content instead (#data-deferred-state-0), readable directly from
@@ -908,10 +908,10 @@
       if (location.href !== startUrl) return;
       const rawPolicy = extractPolicy(entries);
       const propId = getListingIdFromUrl(startUrl);
-      const canonicalPolicy = typeof VDPExtract?.normalizePolicy === "function"
-        ? VDPExtract.normalizePolicy(rawPolicy, propId, "listing-page")
+      const canonicalPolicy = typeof PawExtract?.normalizePolicy === "function"
+        ? PawExtract.normalizePolicy(rawPolicy, propId, "listing-page")
         : rawPolicy;
-      safeStorageSet({ vdpLastPolicy: canonicalPolicy, vdpLastUrl: startUrl });
+      safeStorageSet({ pawLastPolicy: canonicalPolicy, pawLastUrl: startUrl });
       renderPanel(canonicalPolicy);
       onPolicy({ policy: canonicalPolicy, url: startUrl });
     } finally {

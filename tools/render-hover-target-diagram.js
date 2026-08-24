@@ -152,7 +152,7 @@ async function renderHoverTarget() {
         <div class="card-meta">3 beds · 2 baths · Sleeps 6 · 4.9 ★</div>
         <div class="price-row">
           <div class="card-price">$285 <span>/ night</span></div>
-          <div class="vdp-search-badge vdp-badge-allowed" id="target-pill" tabindex="0">🐾 Max 2 dogs allowed · 50 lbs · $150/stay</div>
+          <div class="paw-search-badge paw-badge-allowed" id="target-pill" tabindex="0">🐾 Max 2 dogs allowed · 50 lbs · $150/stay</div>
         </div>
       </div>
     </div>

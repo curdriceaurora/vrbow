@@ -13,7 +13,7 @@ async function renderListingPopup() {
   await page.goto(demoUrl);
   await page.waitForFunction(() => window.__readmeDemoReady === true);
 
-  await page.locator("#vdp-panel").screenshot({
+  await page.locator("#paw-panel").screenshot({
     path: path.join(__dirname, "../docs/listing-summary-popup.png"),
     omitBackground: true,
   });

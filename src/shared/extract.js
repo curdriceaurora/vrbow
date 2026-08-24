@@ -3,11 +3,11 @@
 // Split out of content.js so the regex/parsing layer can be unit-tested
 // under Node (see test/extract.test.js). Loaded as the first content
 // script in the isolated world, where it assigns itself to globalThis;
-// content.js then calls it as `VDPExtract.*`.
+// content.js then calls it as `PawExtract.*`.
 
 (function (root, factory) {
   const api = factory();
-  root.VDPExtract = api;
+  root.PawExtract = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   // ---------- shared text helpers ----------
@@ -744,7 +744,7 @@
         statusKey: "loading",
         icon: "⏳",
         text: "Checking pet policy...",
-        className: "vdp-search-badge vdp-badge-loading",
+        className: "paw-search-badge paw-badge-loading",
       };
     }
 
@@ -753,7 +753,7 @@
         statusKey: "unknown",
         icon: "🐾",
         text: "Check pet rules on listing",
-        className: "vdp-search-badge vdp-badge-unknown",
+        className: "paw-search-badge paw-badge-unknown",
       };
     }
 
@@ -764,7 +764,7 @@
         statusKey: "unknown",
         icon: "🐾",
         text: "Check pet rules on listing",
-        className: "vdp-search-badge vdp-badge-unknown",
+        className: "paw-search-badge paw-badge-unknown",
       };
     }
 
@@ -773,7 +773,7 @@
         statusKey: "banned",
         icon: "🚫",
         text: "Pets not allowed",
-        className: "vdp-search-badge vdp-badge-banned",
+        className: "paw-search-badge paw-badge-banned",
       };
     }
 
@@ -790,7 +790,7 @@
         statusKey: "allowed",
         icon: "🐾",
         text: `${prefix}${detailStr}`,
-        className: "vdp-search-badge vdp-badge-allowed",
+        className: "paw-search-badge paw-badge-allowed",
       };
     }
 
@@ -801,7 +801,7 @@
         statusKey: "restrictions",
         icon: "🐾",
         text: `Pet restrictions${detailStr}`,
-        className: "vdp-search-badge vdp-badge-restrictions",
+        className: "paw-search-badge paw-badge-restrictions",
       };
     }
 
@@ -809,7 +809,7 @@
       statusKey: "unknown",
       icon: "🐾",
       text: "Check pet rules on listing",
-      className: "vdp-search-badge vdp-badge-unknown",
+      className: "paw-search-badge paw-badge-unknown",
     };
   }
 

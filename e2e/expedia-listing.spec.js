@@ -28,9 +28,9 @@ test.describe("Expedia adapter: real extension end-to-end (issue #11)", () => {
       );
 
       await page.goto(PET_FEE_PAYLOAD.url);
-      const panel = page.locator("#vdp-panel");
+      const panel = page.locator("#paw-panel");
       await expect(panel).toBeVisible({ timeout: 6000 });
-      await expect(panel.locator(".vdp-title")).toHaveText("Dog policy");
+      await expect(panel.locator(".paw-title")).toHaveText("Dog policy");
       await expect(panel).toContainText("Max dogs");
       await expect(panel).toContainText("2");
       await expect(panel).toContainText("75 lbs");
@@ -52,10 +52,10 @@ test.describe("Expedia adapter: real extension end-to-end (issue #11)", () => {
       );
 
       await page.goto(NO_PETS_PAYLOAD.url);
-      const panel = page.locator("#vdp-panel");
+      const panel = page.locator("#paw-panel");
       await expect(panel).toBeVisible({ timeout: 6000 });
       await expect(panel).toContainText("No pets allowed");
-      await expect(panel.locator(".vdp-header")).toHaveClass(/vdp-tone-bad/);
+      await expect(panel.locator(".paw-header")).toHaveClass(/paw-tone-bad/);
 
       await guard.assertNoLeakedRequests(page);
     } finally {

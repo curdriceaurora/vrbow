@@ -143,9 +143,9 @@ test("8.2.4: exercises and reports browser-path coverage for production content.
           storage: {
             local: {
               store: {
-                "vrbow_enable_search_badging": true,
-                "vrbow_cache_old": { cacheVersion: 1, expiresAt: Date.now() - 10000 },
-                "vrbow_cache_100001": {
+                "paw_enable_search_badging": true,
+                "paw_cache_old": { cacheVersion: 1, expiresAt: Date.now() - 10000 },
+                "paw_cache_100001": {
                   cacheVersion: 1,
                   propertyId: "100001",
                   expiresAt: Date.now() + 100000,
@@ -359,7 +359,7 @@ test("8.2.4: exercises and reports browser-path coverage for production content.
   // 3. Popup scenario creator
   function createPopupHtml(tabUrl, policyResponse, lastError = null) {
     return `<!doctype html>
-    <html lang="en" class="vdp-theme-root">
+    <html lang="en" class="paw-theme-root">
       <head>
         <meta charset="utf-8">
         <style>${tokensCss}\n${popupCss}</style>
@@ -373,8 +373,8 @@ test("8.2.4: exercises and reports browser-path coverage for production content.
               local: {
                 get(keys, cb) {
                   cb({
-                    vdpLastUrl: "https://www.vrbo.com/123456",
-                    vdpLastPolicy: ${JSON.stringify(policyResponse?.policy || null)}
+                    pawLastUrl: "https://www.vrbo.com/123456",
+                    pawLastPolicy: ${JSON.stringify(policyResponse?.policy || null)}
                   });
                 },
                 set(k, cb) { cb && cb(); }
@@ -459,12 +459,12 @@ test("8.2.4: exercises and reports browser-path coverage for production content.
   await searchPage.coverage.startJSCoverage();
   await searchPage.goto("https://www.vrbo.com/Hotel-Search?destination=Miami");
 
-  const badge1 = searchPage.locator("#card-1 .vdp-search-badge");
+  const badge1 = searchPage.locator("#card-1 .paw-search-badge");
   await expect(badge1).toBeVisible({ timeout: 5000 });
 
   // Hover quick-view tooltip and keyboard navigation
   await badge1.hover();
-  const tooltip = searchPage.locator("#vdp-search-tooltip");
+  const tooltip = searchPage.locator("#paw-search-tooltip");
   await expect(tooltip).toBeVisible();
 
   // Test keyboard trigger and dismiss
@@ -476,12 +476,12 @@ test("8.2.4: exercises and reports browser-path coverage for production content.
   // Test status states in updateBadgeUi
   await searchPage.evaluate(() => {
     const card = document.querySelector("#card-1");
-    const badge = card.querySelector(".vdp-search-badge");
+    const badge = card.querySelector(".paw-search-badge");
     // Trigger capped, rate_limited, unknown, and rich allowed status rendering
-    badge.dataset.vdpStatus = "";
+    badge.dataset.pawStatus = "";
     card.dispatchEvent(new Event("mouseenter"));
-    window.dispatchEvent(new CustomEvent("vdp-search-apollo-data", { detail: { 100001: { petsAllowed: true } } }));
-    window.dispatchEvent(new Event("vdp-locationchange"));
+    window.dispatchEvent(new CustomEvent("paw-search-apollo-data", { detail: { 100001: { petsAllowed: true } } }));
+    window.dispatchEvent(new Event("paw-locationchange"));
   });
 
   // Recycle Card 1 to Property 3 (Virtualization)
@@ -501,27 +501,27 @@ test("8.2.4: exercises and reports browser-path coverage for production content.
   await listingPage.coverage.startJSCoverage();
   await listingPage.goto("https://www.vrbo.com/123456");
 
-  const panel = listingPage.locator("#vdp-panel");
+  const panel = listingPage.locator("#paw-panel");
   await expect(panel).toBeVisible({ timeout: 5000 });
   await expect(panel).toContainText("Dog policy");
 
   // Toggle expanded and collapsed (starts collapsed by default on constrained viewports)
-  await expect(panel).toHaveClass(/vdp-collapsed/);
-  await panel.locator(".vdp-header").click();
-  await expect(panel).not.toHaveClass(/vdp-collapsed/);
-  await panel.locator(".vdp-header").click();
-  await expect(panel).toHaveClass(/vdp-collapsed/);
+  await expect(panel).toHaveClass(/paw-collapsed/);
+  await panel.locator(".paw-header").click();
+  await expect(panel).not.toHaveClass(/paw-collapsed/);
+  await panel.locator(".paw-header").click();
+  await expect(panel).toHaveClass(/paw-collapsed/);
 
   // Exercise popup message listeners in content script
   await listingPage.evaluate(() => {
-    window.dispatchEvent(new CustomEvent("vdp-apollo-data", { detail: { test: true } }));
-    window.dispatchEvent(new CustomEvent("vdp-request-apollo-data"));
+    window.dispatchEvent(new CustomEvent("paw-apollo-data", { detail: { test: true } }));
+    window.dispatchEvent(new CustomEvent("paw-request-apollo-data"));
     // Trigger message listeners
     const listeners = window.chrome?.runtime?.onMessage?.listeners || [];
     for (const fn of listeners) {
-      fn({ type: "vdp-get-policy" }, {}, () => {});
-      fn({ type: "vdp-rescan" }, {}, () => {});
-      fn({ type: "vdp-ping" }, {}, () => {});
+      fn({ type: "paw-get-policy" }, {}, () => {});
+      fn({ type: "paw-rescan" }, {}, () => {});
+      fn({ type: "paw-ping" }, {}, () => {});
     }
   });
 
@@ -537,7 +537,7 @@ test("8.2.4: exercises and reports browser-path coverage for production content.
   await airbnbPage.coverage.startJSCoverage();
   await airbnbPage.goto("https://www.airbnb.com/rooms/42406610");
 
-  const airbnbPanel = airbnbPage.locator("#vdp-panel");
+  const airbnbPanel = airbnbPage.locator("#paw-panel");
   await expect(airbnbPanel).toBeVisible({ timeout: 5000 });
   await expect(airbnbPanel).toContainText("Dog policy");
   // Exercises the buried-fee extraction path (getPdpStructuredPayload's
@@ -556,7 +556,7 @@ test("8.2.4: exercises and reports browser-path coverage for production content.
   await expediaPage.coverage.startJSCoverage();
   await expediaPage.goto(EXPEDIA_PET_FEE_PAYLOAD.url);
 
-  const expediaPanel = expediaPage.locator("#vdp-panel");
+  const expediaPanel = expediaPage.locator("#paw-panel");
   await expect(expediaPanel).toBeVisible({ timeout: 5000 });
   await expect(expediaPanel).toContainText("Dog policy");
   await expect(expediaPanel).toContainText("Fee");

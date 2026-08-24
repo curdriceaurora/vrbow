@@ -8,13 +8,13 @@
   if (typeof module === "object" && module.exports) {
     module.exports = factory();
   } else {
-    root.VdpSearchCache = factory();
+    root.PawSearchCache = factory();
   }
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   "use strict";
 
-  const CACHE_PREFIX = "vrbow_cache_";
-  const ALIAS_PREFIX = "vrbow_alias_";
+  const CACHE_PREFIX = "paw_cache_";
+  const ALIAS_PREFIX = "paw_alias_";
   const CACHE_RECORD_VERSION = 1;
   const POLICY_SCHEMA_VERSION = 1;
   const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -128,7 +128,7 @@
   function resolveCacheKey(propId, urlHint) {
     if (!propId) return "";
     try {
-      const siteRegistry = (typeof globalThis !== "undefined" && globalThis.VdpSiteRegistry) ||
+      const siteRegistry = (typeof globalThis !== "undefined" && globalThis.PawSiteRegistry) ||
         (typeof require === "function" ? require("./site-registry.js") : null);
       if (siteRegistry && typeof siteRegistry.getCacheKey === "function") {
         return siteRegistry.getCacheKey(urlHint || propId, propId);
@@ -139,8 +139,8 @@
 
   /**
    * 8.2.7 Bounded Storage Maintenance:
-   * Remove stale, expired, or incompatible Vrbow cache keys from storage.
-   * Sweeps only keys with the vrbow_cache_ prefix.
+   * Remove stale, expired, or incompatible PawCheck cache keys from storage.
+   * Sweeps only keys with the paw_cache_ prefix.
    * Records no analytics.
    */
   async function performStorageMaintenance(storage, options = {}) {
@@ -161,7 +161,7 @@
           let inspected = 0;
 
           for (const [key, entry] of Object.entries(allItems)) {
-            // Sweep only keys with the vrbow_cache_ prefix
+            // Sweep only keys with the paw_cache_ prefix
             if (!key.startsWith(CACHE_PREFIX)) {
               continue;
             }
@@ -435,7 +435,7 @@
           const cacheKey = resolveCacheKey(propertyId, targetUrl);
           storage.set({ [cacheKey]: entry }, () => {});
         } catch (e) {
-          console.warn("Vrbow failed to write cache:", e);
+          console.warn("PawCheck failed to write cache:", e);
         }
       }
 

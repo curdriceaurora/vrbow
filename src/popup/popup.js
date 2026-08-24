@@ -4,7 +4,7 @@ function el(html) {
   return t.content.firstChild;
 }
 
-const { escapeHtml, formatMoney } = globalThis.VdpFormatters;
+const { escapeHtml, formatMoney } = globalThis.PawFormatters;
 
 function renderUnsupportedPage() {
   const c = document.getElementById("content");
@@ -86,9 +86,9 @@ function withActiveTab(cb) {
 }
 
 function getSiteRegistry() {
-  if (globalThis.VdpSiteRegistry) return globalThis.VdpSiteRegistry;
+  if (globalThis.PawSiteRegistry) return globalThis.PawSiteRegistry;
   if (typeof console !== "undefined" && typeof console.warn === "function") {
-    console.warn("[vrbow] VdpSiteRegistry is unavailable; check script load order");
+    console.warn("[vrbow] PawSiteRegistry is unavailable; check script load order");
   }
   return null;
 }
@@ -125,13 +125,13 @@ function loadPolicy() {
       renderUnsupportedPage();
       return;
     }
-    chrome.tabs.sendMessage(tab.id, { type: "vdp-get-policy" }, (resp) => {
+    chrome.tabs.sendMessage(tab.id, { type: "paw-get-policy" }, (resp) => {
       if (chrome.runtime.lastError || !resp || !resp.policy) {
         // Content script may not have responded yet (e.g. page still
         // loading) — fall back to the last result it cached to storage.
-        chrome.storage?.local?.get?.(["vdpLastPolicy", "vdpLastUrl"], (data) => {
-          if (data && data.vdpLastUrl === tab.url && data.vdpLastPolicy) {
-            renderPolicy(data.vdpLastPolicy);
+        chrome.storage?.local?.get?.(["pawLastPolicy", "pawLastUrl"], (data) => {
+          if (data && data.pawLastUrl === tab.url && data.pawLastPolicy) {
+            renderPolicy(data.pawLastPolicy);
           } else {
             renderPolicy(null);
           }
@@ -147,7 +147,7 @@ document.getElementById("rescan").addEventListener("click", () => {
   document.getElementById("content").innerHTML = '<p class="status-tone tone-loading">Rescanning…</p>';
   withActiveTab((tab) => {
     if (!tab) return;
-    chrome.tabs.sendMessage(tab.id, { type: "vdp-rescan" }, (resp) => {
+    chrome.tabs.sendMessage(tab.id, { type: "paw-rescan" }, (resp) => {
       if (chrome.runtime.lastError || !resp) {
         renderPolicy(null);
         return;
@@ -164,12 +164,12 @@ loadPolicy();
 const toggleSearchBadging = document.getElementById("toggle-search-badging");
 if (toggleSearchBadging && chrome.storage && chrome.storage.local) {
   // Search enrichment is opt-in because it fetches individual listings.
-  chrome.storage.local.get(["vrbow_enable_search_badging"], (data) => {
-    toggleSearchBadging.checked = data?.vrbow_enable_search_badging === true;
+  chrome.storage.local.get(["paw_enable_search_badging"], (data) => {
+    toggleSearchBadging.checked = data?.paw_enable_search_badging === true;
   });
 
   // Save state on change
   toggleSearchBadging.addEventListener("change", (e) => {
-    chrome.storage.local.set({ vrbow_enable_search_badging: e.target.checked });
+    chrome.storage.local.set({ paw_enable_search_badging: e.target.checked });
   });
 }

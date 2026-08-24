@@ -67,11 +67,11 @@ test("8.1.6: verifies dialog accessibility contract, non-modal semantics, focus-
 
     await page.goto(SEARCH_URL);
 
-    const badge = page.locator(".vdp-search-badge").first();
+    const badge = page.locator(".paw-search-badge").first();
     await expect(badge).toBeVisible({ timeout: 6_000 });
-    await expect(badge).toHaveClass(/vdp-badge-allowed/);
+    await expect(badge).toHaveClass(/paw-badge-allowed/);
 
-    const tooltip = page.locator("#vdp-search-tooltip");
+    const tooltip = page.locator("#paw-search-tooltip");
     await expect(tooltip).toHaveCount(1);
 
     // 1. Accessibility Structure & Non-Modal Contract
@@ -83,7 +83,7 @@ test("8.1.6: verifies dialog accessibility contract, non-modal semantics, focus-
     await expect(badge).toHaveAttribute("role", "button");
     await expect(badge).toHaveAttribute("tabindex", "0");
     await expect(badge).toHaveAttribute("aria-haspopup", "dialog");
-    await expect(badge).toHaveAttribute("aria-controls", "vdp-search-tooltip");
+    await expect(badge).toHaveAttribute("aria-controls", "paw-search-tooltip");
     await expect(badge).toHaveAttribute("aria-expanded", "false");
 
     // 2. Mouse Hover Opening does NOT steal focus
@@ -116,8 +116,8 @@ test("8.1.6: verifies dialog accessibility contract, non-modal semantics, focus-
 
     // 4. Keyboard Activation via Enter: moves focus to Close button
     await page.keyboard.press("Enter");
-    const closeBtn = tooltip.locator(".vdp-tooltip-close");
-    const listingLink = tooltip.locator(".vdp-tooltip-footer a");
+    const closeBtn = tooltip.locator(".paw-tooltip-close");
+    const listingLink = tooltip.locator(".paw-tooltip-footer a");
     await expect(closeBtn).toBeFocused({ timeout: 4_000 });
 
     // 5. Focus Looping (Tab / Shift+Tab inside dialog)

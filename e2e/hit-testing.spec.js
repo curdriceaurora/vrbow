@@ -103,9 +103,9 @@ test("verifies browser hit-testing order, physical mouse coordinate hover, and c
 
     await page.goto(SEARCH_URL);
 
-    const badge = page.locator(".vdp-search-badge").first();
+    const badge = page.locator(".paw-search-badge").first();
     await expect(badge).toBeVisible({ timeout: 6_000 });
-    await expect(badge).toHaveClass(/vdp-badge-allowed/);
+    await expect(badge).toHaveClass(/paw-badge-allowed/);
 
     const box = await badge.boundingBox();
     expect(box).not.toBeNull();
@@ -120,7 +120,7 @@ test("verifies browser hit-testing order, physical mouse coordinate hover, and c
       return {
         tag: el?.tagName,
         className: el?.className,
-        insideBadge: !!el?.closest(".vdp-search-badge"),
+        insideBadge: !!el?.closest(".paw-search-badge"),
         stack
       };
     }, { x: centerX, y: centerY });
@@ -130,7 +130,7 @@ test("verifies browser hit-testing order, physical mouse coordinate hover, and c
     // 2. Physical-Style Mouse Coordinate Hover (page.mouse.move)
     // Move from outside directly to the exact badge coordinate using physical mouse pipeline
     await page.mouse.move(0, 0);
-    const tooltip = page.locator("#vdp-search-tooltip");
+    const tooltip = page.locator("#paw-search-tooltip");
     await expect(tooltip).not.toBeVisible();
 
     await page.mouse.move(centerX, centerY);
@@ -195,7 +195,7 @@ test("verifies live-traffic guardrail aborts unrouted requests and catches viola
 
     await page.goto(SEARCH_URL);
     const card = page.locator("#card-unrouted");
-    await expect(card.locator(".vdp-search-badge")).toBeVisible({ timeout: 6_000 });
+    await expect(card.locator(".paw-search-badge")).toBeVisible({ timeout: 6_000 });
 
     // Wait past dwell and dispatch to ensure fetch attempt is caught by catch-all
     await page.waitForTimeout(1_500);
@@ -213,7 +213,7 @@ test("verifies live-traffic guardrail aborts unrouted requests and catches viola
 //
 // Deliberately NO global `* { box-sizing: border-box }`. Vrbo does not guarantee
 // one and the extension stylesheet does not set one, so a fixture that declares
-// it would hide the 18px overflow that `box-sizing` on .vdp-search-badge exists
+// it would hide the 18px overflow that `box-sizing` on .paw-search-badge exists
 // to prevent.
 const SEARCH_HTML_PRICE_FIRST = `<!doctype html>
 <html lang="en">
@@ -287,8 +287,8 @@ test("#18: badge spans the content column identically regardless of label, and w
 
     await page.goto(SEARCH_URL);
 
-    const shortBadge = page.locator("#card-short .vdp-search-badge");
-    const longBadge = page.locator("#card-long .vdp-search-badge");
+    const shortBadge = page.locator("#card-short .paw-search-badge");
+    const longBadge = page.locator("#card-long .paw-search-badge");
     await expect(shortBadge).toBeVisible({ timeout: 8_000 });
     await expect(longBadge).toBeVisible({ timeout: 8_000 });
 
@@ -296,13 +296,13 @@ test("#18: badge spans the content column identically regardless of label, and w
     // that precedes it in document order.
     for (const id of ["card-short", "card-long"]) {
       const mountedIn = await page.evaluate((cardId) => {
-        const badge = document.querySelector(`#${cardId} .vdp-search-badge`);
+        const badge = document.querySelector(`#${cardId} .paw-search-badge`);
         return {
           slot: badge.parentElement.className,
           host: badge.parentElement.parentElement.className,
         };
       }, id);
-      expect(mountedIn.slot).toContain("vdp-badge-slot");
+      expect(mountedIn.slot).toContain("paw-badge-slot");
       expect(mountedIn.host).toContain("uitk-card-content");
     }
 
@@ -312,7 +312,7 @@ test("#18: badge spans the content column identically regardless of label, and w
 
     const metrics = await page.evaluate(() => {
       const read = (cardId) => {
-        const badge = document.querySelector(`#${cardId} .vdp-search-badge`);
+        const badge = document.querySelector(`#${cardId} .paw-search-badge`);
         const host = badge.parentElement.parentElement;
         const hostStyle = getComputedStyle(host);
         const inner = host.clientWidth
@@ -341,12 +341,12 @@ test("#18: badge spans the content column identically regardless of label, and w
     // Acceptance: still the hit-test winner over .uitk-card-link — now across the
     // whole width, not just a text-sized pill at the centre.
     const hits = await page.evaluate(() => {
-      const badge = document.querySelector("#card-short .vdp-search-badge");
+      const badge = document.querySelector("#card-short .paw-search-badge");
       const r = badge.getBoundingClientRect();
       const y = r.top + r.height / 2;
       const at = (x) => {
         const el = document.elementFromPoint(x, y);
-        return el && el.closest(".vdp-search-badge") ? "badge" : (el ? el.className : "none");
+        return el && el.closest(".paw-search-badge") ? "badge" : (el ? el.className : "none");
       };
       return { left: at(r.left + 2), center: at(r.left + r.width / 2), right: at(r.right - 2) };
     });
@@ -417,19 +417,19 @@ test("#18: the slot spans every column of a grid parent and never overflows a no
     }
 
     await page.goto(SEARCH_URL);
-    await expect(page.locator("#grid .vdp-search-badge")).toBeVisible({ timeout: 8_000 });
-    await expect(page.locator("#nowrap .vdp-search-badge")).not.toHaveText(/Checking pet policy/, { timeout: 8_000 });
+    await expect(page.locator("#grid .paw-search-badge")).toBeVisible({ timeout: 8_000 });
+    await expect(page.locator("#nowrap .paw-search-badge")).not.toHaveText(/Checking pet policy/, { timeout: 8_000 });
 
     const measure = await page.evaluate(() => {
       const read = (id) => {
-        const badge = document.querySelector(`#${id} .vdp-search-badge`);
+        const badge = document.querySelector(`#${id} .paw-search-badge`);
         const host = badge.parentElement.parentElement;
         const cs = getComputedStyle(host);
         const avail = host.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
         const r = badge.getBoundingClientRect();
         const hit = (x) => {
           const el = document.elementFromPoint(x, r.top + r.height / 2);
-          return el && el.closest(".vdp-search-badge") ? "badge" : "miss";
+          return el && el.closest(".paw-search-badge") ? "badge" : "miss";
         };
         return {
           ratio: r.width / avail,

@@ -189,7 +189,7 @@ async function waitForPort(port, timeoutMs) {
 
 // A minimal control extension, loaded alongside the real one. It is the
 // only way to tell two very different situations apart, because both make
-// window.__vdpBridgeData absent:
+// window.__pawBridgeData absent:
 //
 //   the browser ignores --load-extension  -> emulate, manifest uncovered
 //   OUR manifest is broken (host match,   -> a real regression, and
@@ -199,7 +199,7 @@ async function waitForPort(port, timeoutMs) {
 // Without the canary the second case silently took the first case's path
 // and could exit 0 — masking the defect the mode was added to detect.
 function writeCanaryExtension() {
-  const dir = path.join(os.tmpdir(), "vdp-live-check-canary");
+  const dir = path.join(os.tmpdir(), "paw-live-check-canary");
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(
     path.join(dir, "manifest.json"),
@@ -214,7 +214,7 @@ function writeCanaryExtension() {
       2
     )
   );
-  fs.writeFileSync(path.join(dir, "canary.js"), `window.__vdpCanary = true;\n`);
+  fs.writeFileSync(path.join(dir, "canary.js"), `window.__pawCanary = true;\n`);
   return dir;
 }
 
@@ -224,7 +224,7 @@ function launchChrome(port) {
   // multi-megabyte profile in tmpdir on every invocation, and reusing one
   // keeps the cache warm. Stale locks come from Chrome being left running,
   // which stopChrome() below is what actually fixes.
-  const profile = path.join(os.tmpdir(), `vdp-live-check-profile-${port}`);
+  const profile = path.join(os.tmpdir(), `paw-live-check-profile-${port}`);
   fs.mkdirSync(profile, { recursive: true });
   const child = spawn(
     findChrome(),
@@ -334,19 +334,19 @@ const readScript = (f) => fs.readFileSync(SCRIPT_PATHS[f] || path.join(ROOT, f),
 
 // Read the rendered panel out of the shared DOM.
 const PANEL_EXPR = `(() => {
-  const p = document.getElementById("vdp-panel");
+  const p = document.getElementById("paw-panel");
   if (!p) return JSON.stringify({ rendered: false });
   return JSON.stringify({
     rendered: true,
-    headline: p.querySelector(".vdp-title")?.textContent?.trim() || null,
-    rows: Array.from(p.querySelectorAll(".vdp-row-wrap")).map((w) => ({
-      label: w.querySelector(".vdp-label")?.textContent?.trim(),
-      value: w.querySelector(".vdp-value")?.textContent?.trim(),
-      hasSource: !!w.querySelector(".vdp-jump"),
-      alternates: w.querySelector(".vdp-alt")?.textContent?.trim() || null,
+    headline: p.querySelector(".paw-title")?.textContent?.trim() || null,
+    rows: Array.from(p.querySelectorAll(".paw-row-wrap")).map((w) => ({
+      label: w.querySelector(".paw-label")?.textContent?.trim(),
+      value: w.querySelector(".paw-value")?.textContent?.trim(),
+      hasSource: !!w.querySelector(".paw-jump"),
+      alternates: w.querySelector(".paw-alt")?.textContent?.trim() || null,
     })),
-    notes: Array.from(p.querySelectorAll(".vdp-other-item")).map((n) => n.textContent.trim()),
-    badge: p.querySelector(".vdp-source-badge")?.textContent?.trim() || null,
+    notes: Array.from(p.querySelectorAll(".paw-other-item")).map((n) => n.textContent.trim()),
+    badge: p.querySelector(".paw-source-badge")?.textContent?.trim() || null,
   });
 })()`;
 
@@ -439,7 +439,7 @@ async function checkListing(port, url, settleMs) {
     // alongside ours, so it answers "can this browser load extensions at
     // all" without depending on OUR manifest being correct.
     const probe = await cdp.send("Runtime.evaluate", {
-      expression: `JSON.stringify({ canary: !!window.__vdpCanary, bridge: !!window.__vdpBridgeRan || typeof window.__vdpBridgeData !== "undefined" })`,
+      expression: `JSON.stringify({ canary: !!window.__pawCanary, bridge: !!window.__pawBridgeRan || typeof window.__pawBridgeData !== "undefined" })`,
       returnByValue: true,
     });
     const { canary, bridge } = JSON.parse(probe.result.value);
@@ -481,7 +481,7 @@ async function checkListing(port, url, settleMs) {
       const { frameTree } = await cdp.send("Page.getFrameTree", {});
       const { executionContextId } = await cdp.send("Page.createIsolatedWorld", {
         frameId: frameTree.frame.id,
-        worldName: "vdp-isolated",
+        worldName: "paw-isolated",
       });
 
       // A CDP isolated world has no chrome.* APIs; a real content script
@@ -506,7 +506,7 @@ async function checkListing(port, url, settleMs) {
     const panel = JSON.parse(panelRes.result.value);
 
     const mainRes = await cdp.send("Runtime.evaluate", {
-      expression: `JSON.stringify({ bridgeRan: !!window.__vdpBridgeRan, bridgeDataIsNull: window.__vdpBridgeData === null, bridgeItems: window.__vdpBridgeData?.items?.length ?? 0, policyLeaked: !!window.__vdpLastPolicy })`,
+      expression: `JSON.stringify({ bridgeRan: !!window.__pawBridgeRan, bridgeDataIsNull: window.__pawBridgeData === null, bridgeItems: window.__pawBridgeData?.items?.length ?? 0, policyLeaked: !!window.__pawLastPolicy })`,
       returnByValue: true,
     });
     const main = JSON.parse(mainRes.result.value);

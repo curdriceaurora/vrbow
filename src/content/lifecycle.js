@@ -4,10 +4,10 @@
   if (typeof module !== "undefined" && module.exports) {
     module.exports = api;
   } else {
-    root.VdpLifecycle = api;
+    root.PawLifecycle = api;
   }
 })(globalThis, (root) => {
-  const INTERNAL_SELECTOR = ".vdp-search-badge, .vdp-search-tooltip, .vdp-badge-slot, #vdp-panel";
+  const INTERNAL_SELECTOR = ".paw-search-badge, .paw-search-tooltip, .paw-badge-slot, #paw-panel";
 
   function createLifecycle(deps = {}) {
     const win = deps.window || root.window;
@@ -50,7 +50,7 @@
         win.removeEventListener("popstate", popstateListener);
       }
       if (locationListener) {
-        win.removeEventListener("vdp-locationchange", locationListener);
+        win.removeEventListener("paw-locationchange", locationListener);
       }
       popstateListener = null;
       locationListener = null;
@@ -160,10 +160,10 @@
       }
       started = true;
       currentUrl = currentLocation.href;
-      popstateListener = () => win.dispatchEvent(new Event("vdp-locationchange"));
+      popstateListener = () => win.dispatchEvent(new Event("paw-locationchange"));
       locationListener = checkUrl;
       win.addEventListener("popstate", popstateListener);
-      win.addEventListener("vdp-locationchange", locationListener);
+      win.addEventListener("paw-locationchange", locationListener);
       urlTimer = setInterval(checkUrl, 1000);
       observer = new Observer(handleMutations);
       observer.observe(doc.body || doc.documentElement, { childList: true, subtree: true });

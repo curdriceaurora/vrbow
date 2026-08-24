@@ -76,7 +76,7 @@ for (const scheme of ["light", "dark"]) {
 
     test("covers every listing-panel role and preserves host-page isolation", async ({ page }) => {
       await page.goto(fixtureUrl("panel-theme.html"));
-      const panel = page.locator("#vdp-panel");
+      const panel = page.locator("#paw-panel");
       await expect(panel).toBeVisible();
 
       const roles = await page.locator("[data-theme-role]").evaluateAll((elements) =>
@@ -109,13 +109,13 @@ for (const scheme of ["light", "dark"]) {
       await expect(page.locator('[data-theme-role="badge-restrictions"]')).toHaveCSS("background-color", colors.warningSurface);
 
       // Search tooltip
-      const tooltip = page.locator("#vdp-search-tooltip");
+      const tooltip = page.locator("#paw-search-tooltip");
       await expect(tooltip).toBeVisible();
       await expect(tooltip).toHaveCSS("background-color", colors.surface);
       await expect(tooltip).toHaveCSS("color", colors.text);
-      await expect(tooltip.locator(".vdp-tooltip-notes.vdp-tone-warn")).toHaveCSS("color", colors.warning);
-      await expect(tooltip.locator(".vdp-tooltip-notes.vdp-tone-warn")).toHaveCSS("background-color", colors.warningSurface);
-      await expect(tooltip.locator(".vdp-tooltip-footer a")).toHaveCSS("color", colors.link);
+      await expect(tooltip.locator(".paw-tooltip-notes.paw-tone-warn")).toHaveCSS("color", colors.warning);
+      await expect(tooltip.locator(".paw-tooltip-notes.paw-tone-warn")).toHaveCSS("background-color", colors.warningSurface);
+      await expect(tooltip.locator(".paw-tooltip-footer a")).toHaveCSS("color", colors.link);
 
       const hostStyle = await page.locator("#host-content").evaluate((element) => {
         const style = getComputedStyle(element);
@@ -129,16 +129,16 @@ for (const scheme of ["light", "dark"]) {
       });
       expect(searchCardStyle).toEqual({ color: "rgb(0, 0, 0)", background: "rgba(0, 0, 0, 0)" });
 
-      const docRootVar = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--vdp-color-surface"));
+      const docRootVar = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--paw-color-surface"));
       expect(docRootVar.trim()).toBe("");
 
-      const cardVar = await page.locator(".search-card").evaluate((el) => getComputedStyle(el).getPropertyValue("--vdp-color-surface"));
+      const cardVar = await page.locator(".search-card").evaluate((el) => getComputedStyle(el).getPropertyValue("--paw-color-surface"));
       expect(cardVar.trim()).toBe("");
 
-      const hostContentVar = await page.locator("#host-content").evaluate((el) => getComputedStyle(el).getPropertyValue("--vdp-color-surface"));
+      const hostContentVar = await page.locator("#host-content").evaluate((el) => getComputedStyle(el).getPropertyValue("--paw-color-surface"));
       expect(hostContentVar.trim()).toBe("");
 
-      const highlightedHostStyle = await page.locator(".vdp-highlight").evaluate((element) => {
+      const highlightedHostStyle = await page.locator(".paw-highlight").evaluate((element) => {
         const style = getComputedStyle(element);
         return { color: style.color, colorScheme: style.colorScheme };
       });
@@ -148,11 +148,11 @@ for (const scheme of ["light", "dark"]) {
       await close.focus();
       await expect(close).toHaveCSS("outline-color", colors.focus);
 
-      const tooltipClose = tooltip.locator(".vdp-tooltip-close");
+      const tooltipClose = tooltip.locator(".paw-tooltip-close");
       await tooltipClose.focus();
       await expect(tooltipClose).toHaveCSS("outline-color", colors.focus);
 
-      const tooltipLink = tooltip.locator(".vdp-tooltip-footer a");
+      const tooltipLink = tooltip.locator(".paw-tooltip-footer a");
       await tooltipLink.focus();
       await expect(tooltipLink).toHaveCSS("outline-color", colors.focus);
 
@@ -197,7 +197,7 @@ test("updates search badges and tooltips dynamically on live prefers-color-schem
   await page.goto(fixtureUrl("panel-theme.html"));
 
   const badge = page.locator("#badge-allowed");
-  const tooltip = page.locator("#vdp-search-tooltip");
+  const tooltip = page.locator("#paw-search-tooltip");
 
   await expect(badge).toHaveCSS("color", EXPECTED_COLORS.light.allowed);
   await expect(badge).toHaveCSS("background-color", EXPECTED_COLORS.light.allowedSurface);
@@ -224,7 +224,7 @@ test("8.2.5: supports forced-colors active mode with visible boundaries and oper
   // 1. Listing Panel & Search Badges in Forced Colors
   await page.goto(fixtureUrl("panel-theme.html"));
 
-  const panel = page.locator("#vdp-panel");
+  const panel = page.locator("#paw-panel");
   await expect(panel).toBeVisible();
   await expect(panel).toHaveCSS("border-style", "solid");
 
@@ -238,19 +238,19 @@ test("8.2.5: supports forced-colors active mode with visible boundaries and oper
   await expect(badge).toHaveCSS("outline-style", "solid");
 
   // Focus visible on button in panel
-  const panelBtn = page.locator("#vdp-panel button").first();
+  const panelBtn = page.locator("#paw-panel button").first();
   await panelBtn.focus();
   await expect(panelBtn).toHaveCSS("outline-style", "solid");
 
   // Tooltip in Forced Colors
-  const tooltip = page.locator("#vdp-search-tooltip");
+  const tooltip = page.locator("#paw-search-tooltip");
   await expect(tooltip).toHaveCSS("border-style", "solid");
 
-  const closeBtn = page.locator(".vdp-tooltip-close");
+  const closeBtn = page.locator(".paw-tooltip-close");
   await closeBtn.focus();
   await expect(closeBtn).toHaveCSS("outline-style", "solid");
 
-  const tooltipLink = page.locator(".vdp-tooltip-footer a");
+  const tooltipLink = page.locator(".paw-tooltip-footer a");
   await tooltipLink.focus();
   await expect(tooltipLink).toHaveCSS("outline-style", "solid");
   await expect(tooltipLink).toHaveCSS("text-decoration-line", "underline");

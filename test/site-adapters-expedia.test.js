@@ -91,7 +91,7 @@ describe("expedia adapter: URL matching and property id extraction", () => {
     assert.equal(typeof id, "string");
     assert.equal(id, fixture.propertyId);
     assert.equal(expediaSite.getPropertyId("https://www.expedia.com/Hotel-Search?destination=Pensacola"), null);
-    assert.equal(expediaSite.getCacheKey(id), `vrbow_cache_expedia_${id}`);
+    assert.equal(expediaSite.getCacheKey(id), `paw_cache_expedia_${id}`);
   });
 
   test("canonical fetch URL strips query strings and rejects off-site URLs", () => {
@@ -110,16 +110,16 @@ describe("expedia adapter: URL matching and property id extraction", () => {
 
   test("registering the adapter self-registers expediaSite with the shared site registry", () => {
     delete require.cache[require.resolve("../src/sites/expedia/adapter.js")];
-    const savedRegistry = globalThis.VdpSiteRegistry;
+    const savedRegistry = globalThis.PawSiteRegistry;
     try {
-      globalThis.VdpSiteRegistry = require("../src/shared/site-registry.js");
+      globalThis.PawSiteRegistry = require("../src/shared/site-registry.js");
       require("../src/sites/expedia/adapter.js");
-      const registered = globalThis.VdpSiteRegistry.getSiteForHostname("www.expedia.com");
-      assert.ok(registered, "adapter.js did not self-register with VdpSiteRegistry on load");
+      const registered = globalThis.PawSiteRegistry.getSiteForHostname("www.expedia.com");
+      assert.ok(registered, "adapter.js did not self-register with PawSiteRegistry on load");
       assert.equal(registered.id, "expedia");
     } finally {
-      globalThis.VdpSiteRegistry.unregisterSite?.("expedia");
-      globalThis.VdpSiteRegistry = savedRegistry;
+      globalThis.PawSiteRegistry.unregisterSite?.("expedia");
+      globalThis.PawSiteRegistry = savedRegistry;
       delete require.cache[require.resolve("../src/sites/expedia/adapter.js")];
       require("../src/sites/expedia/adapter.js");
     }
@@ -128,7 +128,7 @@ describe("expedia adapter: URL matching and property id extraction", () => {
   test("browser content-script load attaches and registers the adapter", () => {
     const code = fs.readFileSync(path.join(__dirname, "..", "src", "sites", "expedia", "adapter.js"), "utf8");
     const context = {
-      VdpSiteRegistry: {
+      PawSiteRegistry: {
         parseUrl: require("../src/shared/site-registry.js").parseUrl,
         registered: null,
         registerSite(site) {
@@ -139,9 +139,9 @@ describe("expedia adapter: URL matching and property id extraction", () => {
     context.globalThis = context;
     vm.runInNewContext(code, context, { filename: "src/sites/expedia/adapter.js" });
 
-    assert.ok(context.VdpExpediaAdapter);
-    assert.equal(context.VdpSiteRegistry.registered.id, "expedia");
-    assert.equal(context.VdpExpediaAdapter.expediaSite.getPropertyId("/Foo.h123.Hotel-Information"), "123");
+    assert.ok(context.PawExpediaAdapter);
+    assert.equal(context.PawSiteRegistry.registered.id, "expedia");
+    assert.equal(context.PawExpediaAdapter.expediaSite.getPropertyId("/Foo.h123.Hotel-Information"), "123");
   });
 });
 

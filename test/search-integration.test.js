@@ -1,5 +1,5 @@
 // test/search-integration.test.js
-// Consolidated state-transition integration test suite for Vrbow search subsystem.
+// Consolidated state-transition integration test suite for PawCheck search subsystem.
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
@@ -248,14 +248,14 @@ test("Consolidated State-Transition Suite", async (t) => {
     card.setAttribute("data-stid", "property-card");
 
     const badge = new MockElement("div");
-    badge.className = "vdp-search-badge vdp-badge-loading";
+    badge.className = "paw-search-badge paw-badge-loading";
     card.appendChild(badge);
 
     // Initial binding to Card A
     let currentPropId = "prop_A";
     let unsubA = queue.subscribe("prop_A", (data) => {
       if (currentPropId === "prop_A") {
-        badge.className = data.policy?.petsAllowed ? "vdp-search-badge vdp-badge-allowed" : "vdp-search-badge vdp-badge-banned";
+        badge.className = data.policy?.petsAllowed ? "paw-search-badge paw-badge-allowed" : "paw-search-badge paw-badge-banned";
         badge.textContent = data.policy?.petsAllowed ? "Allowed" : "Pets not allowed";
       }
     });
@@ -263,12 +263,12 @@ test("Consolidated State-Transition Suite", async (t) => {
     await new Promise((r) => setTimeout(r, 40));
 
     assert.equal(badge.textContent, "Pets not allowed");
-    assert.equal(badge.className, "vdp-search-badge vdp-badge-banned");
+    assert.equal(badge.className, "paw-search-badge paw-badge-banned");
 
     // Recycled to Card B: unsubscribe A, reset display immediately to loading
     unsubA();
     currentPropId = "prop_B";
-    badge.className = "vdp-search-badge vdp-badge-loading";
+    badge.className = "paw-search-badge paw-badge-loading";
     badge.textContent = "⏳ Checking pet policy...";
 
     assert.equal(badge.textContent, "⏳ Checking pet policy...");
@@ -276,7 +276,7 @@ test("Consolidated State-Transition Suite", async (t) => {
     // Bind B
     queue.subscribe("prop_B", (data) => {
       if (currentPropId === "prop_B") {
-        badge.className = data.policy?.petsAllowed ? "vdp-search-badge vdp-badge-allowed" : "vdp-search-badge vdp-badge-banned";
+        badge.className = data.policy?.petsAllowed ? "paw-search-badge paw-badge-allowed" : "paw-search-badge paw-badge-banned";
         badge.textContent = data.policy?.petsAllowed ? "Allowed" : "Pets not allowed";
       }
     });
@@ -284,7 +284,7 @@ test("Consolidated State-Transition Suite", async (t) => {
     await new Promise((r) => setTimeout(r, 40));
 
     assert.equal(badge.textContent, "Allowed");
-    assert.equal(badge.className, "vdp-search-badge vdp-badge-allowed");
+    assert.equal(badge.className, "paw-search-badge paw-badge-allowed");
     queue.dispose();
   });
 
@@ -311,7 +311,7 @@ test("Consolidated State-Transition Suite", async (t) => {
   await t.test("4. Search query A → search query B (URL change dismisses open dialog)", () => {
     let lastScannedUrl = "https://www.vrbo.com/Hotel-Search?destination=Miami";
     const tooltip = new MockElement("div");
-    tooltip.className = "vdp-search-tooltip vdp-tooltip-visible";
+    tooltip.className = "paw-search-tooltip paw-tooltip-visible";
     tooltip.style.display = "block";
     tooltip.setAttribute("aria-hidden", "false");
 
@@ -319,7 +319,7 @@ test("Consolidated State-Transition Suite", async (t) => {
     let activeTooltipPropId = "prop_123";
 
     function hideTooltip() {
-      tooltip.classList.remove("vdp-tooltip-visible");
+      tooltip.classList.remove("paw-tooltip-visible");
       tooltip.setAttribute("aria-hidden", "true");
       tooltip.style.display = "none";
       if (activeTooltipTarget) {
@@ -420,23 +420,23 @@ test("Consolidated State-Transition Suite", async (t) => {
 
   await t.test("7. 8.1.6 Dialog accessibility contract & focus management", () => {
     const badge = new MockElement("div");
-    badge.className = "vdp-search-badge vdp-badge-allowed";
+    badge.className = "paw-search-badge paw-badge-allowed";
     badge.setAttribute("tabindex", "0");
     badge.setAttribute("role", "button");
     badge.setAttribute("aria-haspopup", "dialog");
-    badge.setAttribute("aria-controls", "vdp-search-tooltip");
+    badge.setAttribute("aria-controls", "paw-search-tooltip");
     badge.setAttribute("aria-expanded", "false");
 
     const dialog = new MockElement("div");
-    dialog.id = "vdp-search-tooltip";
-    dialog.className = "vdp-search-tooltip";
+    dialog.id = "paw-search-tooltip";
+    dialog.className = "paw-search-tooltip";
     dialog.setAttribute("role", "dialog");
     dialog.setAttribute("aria-label", "Dog policy");
     dialog.setAttribute("aria-hidden", "true");
     dialog.style.display = "none";
 
     const closeBtn = new MockElement("button");
-    closeBtn.className = "vdp-tooltip-close";
+    closeBtn.className = "paw-tooltip-close";
     closeBtn.setAttribute("aria-label", "Close details");
     dialog.appendChild(closeBtn);
 
@@ -703,9 +703,9 @@ test("Consolidated State-Transition Suite", async (t) => {
       if (!listing) return null;
 
       const { propertyId, fetchUrl, navigationUrl } = listing;
-      cardElement.setAttribute("data-vdp-prop-id", propertyId);
-      cardElement.setAttribute("data-vdp-fetch-url", fetchUrl);
-      cardElement.setAttribute("data-vdp-nav-url", navigationUrl);
+      cardElement.setAttribute("data-paw-prop-id", propertyId);
+      cardElement.setAttribute("data-paw-fetch-url", fetchUrl);
+      cardElement.setAttribute("data-paw-nav-url", navigationUrl);
 
       return { propertyId, fetchUrl, navigationUrl };
     }

@@ -19,7 +19,7 @@
 
 const { test, describe, before } = require("node:test");
 const assert = require("node:assert/strict");
-const { MockCustomEvent, MockEvent, installIntervalGuard, installVdpGlobals } = require("./helpers/content-env-stub.js");
+const { MockCustomEvent, MockEvent, installIntervalGuard, installPawGlobals } = require("./helpers/content-env-stub.js");
 
 let panelTest;
 let sparseStateMessage;
@@ -50,10 +50,10 @@ before(() => {
   // from keeping a real timer alive — this test process would otherwise
   // never exit.
   installIntervalGuard();
-  installVdpGlobals();
+  installPawGlobals();
 
   panelTest = require("../src/content/pdp-panel.js").createPdpPanel({
-    siteRegistry: globalThis.VdpSiteRegistry,
+    siteRegistry: globalThis.PawSiteRegistry,
     getListingIdFromUrl: () => null,
     isListingUrl: () => false,
     looksLikeListingPage: () => false,
@@ -170,7 +170,7 @@ describe("pdp-panel.js: sparseStateMessage (fully-sparse panel state)", () => {
     const { text, toneClass } = sparseStateMessage(true);
     assert.match(text, /^Allowed, no additional restrictions listed\./);
     assert.match(text, /Max dogs, weight limit, fee, and pre-registration weren't stated anywhere on this listing\.$/);
-    assert.equal(toneClass, " vdp-tone-good");
+    assert.equal(toneClass, " paw-tone-good");
   });
 
   test("petsAllowed === false: neutral 'weren't stated' wording, no tone class", () => {

@@ -10,9 +10,9 @@
     const api = factory(ext);
     api.__factory = factory;
     module.exports = api;
-    if (typeof globalThis !== "undefined") globalThis.VdpSiteRegistry = api;
+    if (typeof globalThis !== "undefined") globalThis.PawSiteRegistry = api;
   } else {
-    root.VdpSiteRegistry = factory(root.VDPExtract || root.VdpExtract);
+    root.PawSiteRegistry = factory(root.PawExtract);
   }
 })(typeof globalThis !== "undefined" ? globalThis : this, function (extractModule) {
   "use strict";
@@ -104,13 +104,8 @@
   }
 
   function getExtractor() {
-    if (typeof globalThis !== "undefined") {
-      if (globalThis.VDPExtract && typeof globalThis.VDPExtract === "object") {
-        return globalThis.VDPExtract;
-      }
-      if (globalThis.VdpExtract && typeof globalThis.VdpExtract === "object") {
-        return globalThis.VdpExtract;
-      }
+    if (typeof globalThis !== "undefined" && globalThis.PawExtract && typeof globalThis.PawExtract === "object") {
+      return globalThis.PawExtract;
     }
     return cachedExtractor;
   }
@@ -171,10 +166,10 @@
   function vrboParseListingData(html, urlStr, propertyId, canonicalId) {
     if (
       typeof globalThis !== "undefined" &&
-      globalThis.VdpSearchFetcher &&
-      typeof globalThis.VdpSearchFetcher.parseListingHtml === "function"
+      globalThis.PawSearchFetcher &&
+      typeof globalThis.PawSearchFetcher.parseListingHtml === "function"
     ) {
-      return globalThis.VdpSearchFetcher.parseListingHtml(html, propertyId, canonicalId);
+      return globalThis.PawSearchFetcher.parseListingHtml(html, propertyId, canonicalId);
     }
     // Lazy circular require: search-fetcher ↔ site-registry reference each other via runtime require() in Node.
     // Must remain lazy inside function body to avoid breaking module load order at startup.
@@ -203,7 +198,7 @@
     getPropertyId: vrboGetPropertyId,
     getCanonicalFetchUrl: vrboGetCanonicalFetchUrl,
     decorateFetchUrl: vrboDecorateFetchUrl,
-    getCacheKey: (propertyId) => `vrbow_cache_${propertyId}`,
+    getCacheKey: (propertyId) => `paw_cache_${propertyId}`,
     parseListingData: vrboParseListingData,
     searchCardSelector: DEFAULT_SEARCH_CARD_SELECTOR,
     cardContentSelector: DEFAULT_CARD_CONTENT_SELECTORS,
@@ -323,7 +318,7 @@
     if (site && typeof site.getCacheKey === "function") {
       return site.getCacheKey(propertyId);
     }
-    return `vrbow_cache_${propertyId}`;
+    return `paw_cache_${propertyId}`;
   }
 
   // Two call shapes are supported: (urlOrSite, html, propertyId, canonicalId)
@@ -361,7 +356,7 @@
         effectiveCanonicalId
       );
     }
-    // The generic VDPExtract.extractListingData fallback is Vrbo-shaped
+    // The generic PawExtract.extractListingData fallback is Vrbo-shaped
     // (parses Apollo-state-style HTML) — only reachable here when NO site
     // could even be resolved (unrecognized hostname), never when a real
     // site was identified but simply hasn't defined its own parser. The

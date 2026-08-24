@@ -265,7 +265,7 @@ async function run() {
       const { frameTree } = await targetCdp.send("Page.getFrameTree", {});
       const { executionContextId } = await targetCdp.send("Page.createIsolatedWorld", {
         frameId: frameTree.frame.id,
-        worldName: "VrbowIsolatedWorld",
+        worldName: "PawCheckIsolatedWorld",
       });
       contextId = executionContextId;
 
@@ -338,14 +338,14 @@ async function run() {
 
     // 3. Inspect Injected Badges & Aggregate Status Across ALL Badges
     const badgeAnalysis = await evalCdp(targetCdp, `(() => {
-      const badges = Array.from(document.querySelectorAll('.vdp-search-badge'));
+      const badges = Array.from(document.querySelectorAll('.paw-search-badge'));
       const statusCounts = {};
       const terminalCounts = { unknown: 0, timeout: 0, error: 0, rate_limited: 0, capped: 0 };
       const sourceBreakdown = {};
       let policyResolvedCount = 0;
 
       const allBadges = badges.map(b => {
-        const card = b.closest('[data-vdp-prop-id]');
+        const card = b.closest('[data-paw-prop-id]');
         const link = card ? card.querySelector('a[href*="/"]') : null;
         let cleanHref = null;
         if (link && link.href) {
@@ -356,9 +356,9 @@ async function run() {
             cleanHref = link.href.split('?')[0];
           }
         }
-        const status = b.dataset.vdpStatus || 'unknown';
-        const source = b.dataset.vdpSource || null;
-        const propId = card ? card.getAttribute('data-vdp-prop-id') : null;
+        const status = b.dataset.pawStatus || 'unknown';
+        const source = b.dataset.pawSource || null;
+        const propId = card ? card.getAttribute('data-paw-prop-id') : null;
 
         statusCounts[status] = (statusCounts[status] || 0) + 1;
         if (terminalCounts[status] !== undefined) {
@@ -394,7 +394,7 @@ async function run() {
     if (!badgeAnalysis) {
       throw new Error("Badge analysis failed: evaluation returned undefined.");
     }
-    console.log("\n3. Vrbow Search Badges (Aggregate):", JSON.stringify({
+    console.log("\n3. PawCheck Search Badges (Aggregate):", JSON.stringify({
       totalBadges: badgeAnalysis.totalBadges,
       policyResolvedCount: badgeAnalysis.policyResolvedCount,
       statusCounts: badgeAnalysis.statusCounts,
@@ -406,27 +406,27 @@ async function run() {
     // 4. Assertive Hover, Mouse Gap Transit, Close Button, and Keyboard Flow Verification
     // Select an appropriate resolved badge if available, otherwise first badge
     const inter = await evalCdp(targetCdp, `(async () => {
-      const allBadges = Array.from(document.querySelectorAll('.vdp-search-badge'));
+      const allBadges = Array.from(document.querySelectorAll('.paw-search-badge'));
       if (allBadges.length === 0) return { error: 'No badge found to hover' };
 
       // Select a resolved badge if available, otherwise first badge
-      const targetBadge = allBadges.find(b => ['allowed', 'banned', 'restrictions', 'capped'].includes(b.dataset.vdpStatus)) || allBadges[0];
-      const parentCard = targetBadge.closest('[data-vdp-prop-id]');
-      const expectedPropId = parentCard ? parentCard.getAttribute('data-vdp-prop-id') : null;
-      const badgeStatus = targetBadge.dataset.vdpStatus || 'unknown';
+      const targetBadge = allBadges.find(b => ['allowed', 'banned', 'restrictions', 'capped'].includes(b.dataset.pawStatus)) || allBadges[0];
+      const parentCard = targetBadge.closest('[data-paw-prop-id]');
+      const expectedPropId = parentCard ? parentCard.getAttribute('data-paw-prop-id') : null;
+      const badgeStatus = targetBadge.dataset.pawStatus || 'unknown';
 
       // Step A: Mouse enters badge
       targetBadge.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
       await new Promise(r => setTimeout(r, 400));
-      const tooltip = document.querySelector('.vdp-search-tooltip');
-      const initialVisible = tooltip && tooltip.classList.contains('vdp-tooltip-visible') && tooltip.style.display !== 'none';
+      const tooltip = document.querySelector('.paw-search-tooltip');
+      const initialVisible = tooltip && tooltip.classList.contains('paw-tooltip-visible') && tooltip.style.display !== 'none';
       const hasHeader = tooltip && /dog policy/i.test(tooltip.textContent);
 
       // Step B: Pointer moves across the gap to enter the tooltip (grace period test)
       targetBadge.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true, relatedTarget: tooltip }));
       if (tooltip) tooltip.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
       await new Promise(r => setTimeout(r, 300));
-      const preservedAcrossGap = tooltip && tooltip.classList.contains('vdp-tooltip-visible') && tooltip.style.display !== 'none';
+      const preservedAcrossGap = tooltip && tooltip.classList.contains('paw-tooltip-visible') && tooltip.style.display !== 'none';
 
       // Step C: Verify listing link inside tooltip matches listing card
       const tooltipLink = tooltip ? tooltip.querySelector('a[href*="/"]') : null;
@@ -440,10 +440,10 @@ async function run() {
         }
       }
       const linkMatchesProp = tooltipLink && expectedPropId && tooltipLink.href.includes(expectedPropId);
-      const rows = tooltip ? Array.from(tooltip.querySelectorAll('.vdp-tooltip-row')) : [];
+      const rows = tooltip ? Array.from(tooltip.querySelectorAll('.paw-tooltip-row')) : [];
       const parsedFields = rows.map(r => {
-        const lblEl = r.querySelector('.vdp-tooltip-label');
-        const valEl = r.querySelector('.vdp-tooltip-val');
+        const lblEl = r.querySelector('.paw-tooltip-label');
+        const valEl = r.querySelector('.paw-tooltip-val');
         return {
           label: lblEl && lblEl.textContent ? lblEl.textContent.trim() : '',
           value: valEl && valEl.textContent ? valEl.textContent.trim() : ''
@@ -451,7 +451,7 @@ async function run() {
       }).filter(r => r.label && r.value);
 
       // Step D: Dismiss via Close Button click
-      const closeBtn = tooltip ? tooltip.querySelector('.vdp-tooltip-close') : null;
+      const closeBtn = tooltip ? tooltip.querySelector('.paw-tooltip-close') : null;
       if (closeBtn) closeBtn.click();
       await new Promise(r => setTimeout(r, 200));
       const dismissedViaClose = tooltip ? tooltip.style.display === 'none' : false;

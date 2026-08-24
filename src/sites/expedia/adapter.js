@@ -11,17 +11,17 @@
     const api = factory(registryModule);
     module.exports = api;
     if (typeof globalThis !== "undefined") {
-      globalThis.VdpExpediaAdapter = api;
-      if (globalThis.VdpSiteRegistry && typeof globalThis.VdpSiteRegistry.registerSite === "function") {
-        globalThis.VdpSiteRegistry.registerSite(api.expediaSite);
+      globalThis.PawExpediaAdapter = api;
+      if (globalThis.PawSiteRegistry && typeof globalThis.PawSiteRegistry.registerSite === "function") {
+        globalThis.PawSiteRegistry.registerSite(api.expediaSite);
       }
     }
   /* node:coverage disable */
   } else {
-    const api = factory(root.VdpSiteRegistry);
-    root.VdpExpediaAdapter = api;
-    if (root.VdpSiteRegistry && typeof root.VdpSiteRegistry.registerSite === "function") {
-      root.VdpSiteRegistry.registerSite(api.expediaSite);
+    const api = factory(root.PawSiteRegistry);
+    root.PawExpediaAdapter = api;
+    if (root.PawSiteRegistry && typeof root.PawSiteRegistry.registerSite === "function") {
+      root.PawSiteRegistry.registerSite(api.expediaSite);
     }
   }
   /* node:coverage enable */
@@ -136,7 +136,7 @@
     getPropertyId: expediaGetPropertyId,
     getCanonicalFetchUrl: expediaGetCanonicalFetchUrl,
     decorateFetchUrl: expediaDecorateFetchUrl,
-    getCacheKey: (propertyId) => `vrbow_cache_expedia_${propertyId}`,
+    getCacheKey: (propertyId) => `paw_cache_expedia_${propertyId}`,
     getPdpStructuredPayload: expediaGetPdpStructuredPayload,
   };
 

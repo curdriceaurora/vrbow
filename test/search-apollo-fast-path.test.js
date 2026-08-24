@@ -79,10 +79,10 @@ function loadBridge(apolloState, opts = {}) {
     const onData = (e) => {
       response = e.detail;
     };
-    windowObj.addEventListener("vdp-search-apollo-data", onData);
-    const req = new MockCustomEvent("vdp-search-apollo-request", { detail: { propertyIds, requestId } });
+    windowObj.addEventListener("paw-search-apollo-data", onData);
+    const req = new MockCustomEvent("paw-search-apollo-request", { detail: { propertyIds, requestId } });
     windowObj.dispatchEvent(req);
-    windowObj.removeEventListener("vdp-search-apollo-data", onData);
+    windowObj.removeEventListener("paw-search-apollo-data", onData);
     return response;
   }
 
@@ -91,10 +91,10 @@ function loadBridge(apolloState, opts = {}) {
     const onData = (e) => {
       response = e.detail;
     };
-    windowObj.addEventListener("vdp-apollo-data", onData);
-    const req = new MockCustomEvent("vdp-request-apollo-data", {});
+    windowObj.addEventListener("paw-apollo-data", onData);
+    const req = new MockCustomEvent("paw-request-apollo-data", {});
     windowObj.dispatchEvent(req);
-    windowObj.removeEventListener("vdp-apollo-data", onData);
+    windowObj.removeEventListener("paw-apollo-data", onData);
     return response;
   }
 
@@ -270,8 +270,8 @@ test("8.1.1 listing-page sole fallback resolves once but is not reused after SPA
   bridge.window.location.href = "https://www.vrbo.com/5202987";
   const stalePayload = bridge.requestListing();
   assert.equal(stalePayload, null, "stale sole record from the previous listing must not populate the new page");
-  assert.equal(bridge.window.__vdpBridgeRan, true);
-  assert.equal(bridge.window.__vdpBridgeData, null);
+  assert.equal(bridge.window.__pawBridgeRan, true);
+  assert.equal(bridge.window.__pawBridgeData, null);
 });
 
 test("8.1.1 resolveSearchApolloRecord returns null for records with no concrete policy", () => {

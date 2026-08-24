@@ -4,7 +4,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { createSearchFetchQueue, parseListingHtml } = require("../src/shared/search-fetcher.js");
-const { MockCustomEvent, MockEvent, installIntervalGuard, installVdpGlobals } = require("./helpers/content-env-stub.js");
+const { MockCustomEvent, MockEvent, installIntervalGuard, installPawGlobals } = require("./helpers/content-env-stub.js");
 
 test("search-fetcher request lifecycle & cancellation", async (t) => {
   await t.test("aborts active fetch requests on queue.dispose()", async () => {
@@ -601,8 +601,8 @@ function installHarness() {
     now: () => Date.now(),
   };
   installIntervalGuard();
-  installVdpGlobals();
-  globalThis.VdpSearchFetcher = {
+  installPawGlobals();
+  globalThis.PawSearchFetcher = {
     ...realFetcher,
     createSearchFetchQueue(options = {}) {
       const queue = realFetcher.createSearchFetchQueue({
@@ -639,7 +639,7 @@ function installHarness() {
     },
   };
 
-  storageData.set("vrbow_enable_search_badging", true);
+  storageData.set("paw_enable_search_badging", true);
   const contentTest = require("../src/content/content.js").__test;
   const panelTest = contentTest.getPanel().__test;
   const searchTest = contentTest.getSearchBadges().__test;
@@ -654,7 +654,7 @@ function freshSearchPage(options = {}) {
   clearAllTimers();
   for (const child of mockDocument.body.childNodes.slice()) child.remove();
   storageData.clear();
-  storageData.set("vrbow_enable_search_badging", true);
+  storageData.set("paw_enable_search_badging", true);
   fetchLog.length = 0;
   hangingIds.clear();
   hangingResolvers.clear();
@@ -707,13 +707,13 @@ function currentObserver() { return __test.getSearchCardObserver(); }
 function fireIntersection(entries) { currentObserver().fire(entries); }
 
 function fireMutation() {
-  // Must be page DOM, not one of Vrbow's own nodes: the observer deliberately
+  // Must be page DOM, not one of PawCheck's own nodes: the observer deliberately
   // ignores mutations that only touch its badge/tooltip/panel.
   const target = mockDocument.body.querySelector('[data-stid="property-card"]') || mockDocument.body;
   mutationObservers[mutationObservers.length - 1].fire([{ target }]);
 }
 
-function badgeOf(card) { return card.querySelector(".vdp-search-badge"); }
+function badgeOf(card) { return card.querySelector(".paw-search-badge"); }
 
 const listingUrlFor = (propId) => `https://www.vrbo.com/${propId}?chkin=2026-09-01`;
 
@@ -740,7 +740,7 @@ test("search card orchestration: recycle gate, dwell jitter, scan throttle, and 
     freshSearchPage();
     const card = makeCard("card-1", listingUrlFor("1000001"));
     __test.scanSearchCards();
-    assert.equal(card.getAttribute("data-vdp-prop-id"), "1000001");
+    assert.equal(card.getAttribute("data-paw-prop-id"), "1000001");
     assert.equal(spies.enqueue.length, 0, "first bind must not enqueue on its own");
 
     // Card is off-screen.
@@ -750,7 +750,7 @@ test("search card orchestration: recycle gate, dwell jitter, scan throttle, and 
     recycleCard(card, listingUrlFor("2000002"));
     __test.scanSearchCards();
 
-    assert.equal(card.getAttribute("data-vdp-prop-id"), "2000002", "re-binding still happens off-screen");
+    assert.equal(card.getAttribute("data-paw-prop-id"), "2000002", "re-binding still happens off-screen");
     assert.equal(spies.enqueue.length, 0, "off-screen recycle must not enqueue");
     assert.equal(__test.getSearchStats().enqueued, enqueuedBefore, "no enqueue for an off-screen recycle");
 
@@ -759,7 +759,7 @@ test("search card orchestration: recycle gate, dwell jitter, scan throttle, and 
     recycleCard(card, listingUrlFor("3000003"));
     __test.scanSearchCards();
 
-    assert.equal(card.getAttribute("data-vdp-prop-id"), "3000003");
+    assert.equal(card.getAttribute("data-paw-prop-id"), "3000003");
     assert.deepEqual(
       spies.enqueue.map((e) => e.propId),
       ["3000003"],
@@ -906,7 +906,7 @@ test("search card orchestration: recycle gate, dwell jitter, scan throttle, and 
     await sleep(700);
 
     assert.equal(__test.getSearchQueue().getActiveCount(), 1, "request must be in flight for this test to mean anything");
-    assert.equal(badge.dataset.vdpStatus, "loading");
+    assert.equal(badge.dataset.pawStatus, "loading");
 
     card.remove();
     const pruned = __test.pruneStaleSearchCards();
@@ -928,7 +928,7 @@ test("search card orchestration: recycle gate, dwell jitter, scan throttle, and 
       "the completed in-flight request must not reach the pruned card's subscriber"
     );
     assert.equal(spies.notify.length, notifiesBefore);
-    assert.equal(badge.dataset.vdpStatus, "loading", "badge was never repainted by the stale response");
+    assert.equal(badge.dataset.pawStatus, "loading", "badge was never repainted by the stale response");
   });
 
   await t.test("a pruned card that returns to the DOM re-subscribes without issuing a new request", async () => {
@@ -944,13 +944,13 @@ test("search card orchestration: recycle gate, dwell jitter, scan throttle, and 
     // Virtualized list detaches the node, prune tears its subscription down...
     card.remove();
     assert.equal(__test.pruneStaleSearchCards(), 1);
-    assert.equal(card._vdpUnsub, null, "prune released the subscription");
+    assert.equal(card._pawUnsub, null, "prune released the subscription");
 
     // ...and then the same node, still showing the same property, comes back.
     mockDocument.body.appendChild(card);
     __test.scanSearchCards();
 
-    assert.equal(typeof card._vdpUnsub, "function", "a returning card must re-subscribe");
+    assert.equal(typeof card._pawUnsub, "function", "a returning card must re-subscribe");
     assert.ok(__test.getTrackedSearchCards().has("1000001"), "and be tracked again");
     assert.equal(spies.enqueue.length, enqueuesBefore, "re-attaching must not re-request the property");
   });
@@ -966,7 +966,7 @@ test("search card orchestration: recycle gate, dwell jitter, scan throttle, and 
 
     assert.equal(__test.getSearchQueue(), null, "search -> listing disposes, unchanged from before");
     assert.equal(__test.getTrackedSearchCards().size, 0);
-    assert.equal(mockDocument.querySelectorAll(".vdp-search-badge").length, 0);
+    assert.equal(mockDocument.querySelectorAll(".paw-search-badge").length, 0);
 
     // The listing branch schedules a full page rescan; nothing here needs it.
     clearAllTimers();
@@ -1063,12 +1063,12 @@ test("search card orchestration: recycle gate, dwell jitter, scan throttle, and 
     const price = card.querySelector('[data-stid="price-summary"]');
     const content = card.querySelector(".uitk-card-content");
     assert.equal(
-      price.querySelector(".vdp-search-badge"),
+      price.querySelector(".paw-search-badge"),
       null,
       "the badge must not mount inside the price sub-element"
     );
     assert.ok(
-      content.querySelector(".vdp-search-badge"),
+      content.querySelector(".paw-search-badge"),
       "the badge belongs to the content column, whose width it is meant to match"
     );
   });
@@ -1085,7 +1085,7 @@ test("search card orchestration: recycle gate, dwell jitter, scan throttle, and 
     const badge = badgeOf(card);
     const slot = badge.parentNode;
     assert.ok(
-      slot.classList.contains("vdp-badge-slot"),
+      slot.classList.contains("paw-badge-slot"),
       "the badge's direct parent is the slot the extension owns"
     );
     assert.equal(
@@ -1096,12 +1096,12 @@ test("search card orchestration: recycle gate, dwell jitter, scan throttle, and 
 
     // The extra level must stay invisible to every descendant lookup in the
     // orchestration paths, which is how recycling finds an existing badge.
-    assert.equal(card.querySelector(".vdp-search-badge"), badge);
+    assert.equal(card.querySelector(".paw-search-badge"), badge);
   });
 
   // #18: the elevation that wins hit-testing over .uitk-card-link is applied in
   // two places — inline by content.js and by a rule in content.css. Introducing
-  // the slot moves what `:has(> .vdp-search-badge)` matches, so the two can
+  // the slot moves what `:has(> .paw-search-badge)` matches, so the two can
   // silently drift onto different nodes. At full width that failure spans the
   // whole card instead of a small pill.
   await t.test("#18: the CSS elevation rule and the inline elevation target the same node", async () => {
@@ -1117,7 +1117,7 @@ test("search card orchestration: recycle gate, dwell jitter, scan throttle, and 
     assert.equal(host.style.zIndex, "2", "content.js elevates the resolved container");
     assert.equal(host.style.position, "relative", "and positions it so the z-index applies");
 
-    // The stylesheet must elevate that same container. `:has(> .vdp-search-badge)`
+    // The stylesheet must elevate that same container. `:has(> .paw-search-badge)`
     // now resolves to the slot, one level too low, so the rule has to select on
     // the slot instead.
     // Comments stripped: this asserts on live rules, and the rule below is
@@ -1127,12 +1127,12 @@ test("search card orchestration: recycle gate, dwell jitter, scan throttle, and 
       .replace(/\/\*[\s\S]*?\*\//g, "");
     assert.match(
       css,
-      /\[data-vdp-prop-id\]\s+:has\(>\s*\.vdp-badge-slot\)/,
+      /\[data-paw-prop-id\]\s+:has\(>\s*\.paw-badge-slot\)/,
       "the elevation rule selects the slot's parent, matching the inline style"
     );
     assert.doesNotMatch(
       css,
-      /:has\(>\s*\.vdp-search-badge\)/,
+      /:has\(>\s*\.paw-search-badge\)/,
       "the pre-slot selector would elevate the slot rather than the container"
     );
   });
@@ -1219,11 +1219,11 @@ test("search card orchestration: recycle gate, dwell jitter, scan throttle, and 
       for (const id of propertyIds) {
         results[id] = { items: [{ header: "Pets", text: "No pets allowed." }] };
       }
-      globalThis.window.dispatchEvent(new CustomEvent("vdp-search-apollo-data", { detail: { requestId, results } }));
+      globalThis.window.dispatchEvent(new CustomEvent("paw-search-apollo-data", { detail: { requestId, results } }));
     };
-    globalThis.window.addEventListener("vdp-search-apollo-request", apolloResponder);
+    globalThis.window.addEventListener("paw-search-apollo-request", apolloResponder);
     t.after(() => {
-      globalThis.window.removeEventListener("vdp-search-apollo-request", apolloResponder);
+      globalThis.window.removeEventListener("paw-search-apollo-request", apolloResponder);
       hangingIds.delete(propId);
     });
 
@@ -1271,10 +1271,10 @@ test("search card orchestration: recycle gate, dwell jitter, scan throttle, and 
     // Real-world shape: the mutation record's target is the slot's new
     // parent (the card's content column), not the slot itself, because
     // childList mutations report the container as target. addedNodes still
-    // holds the freshly-inserted .vdp-badge-slot.
+    // holds the freshly-inserted .paw-badge-slot.
     const container = card.querySelector(".uitk-card-content");
     const slot = mockDocument.createElement("div");
-    slot.classList.add("vdp-badge-slot");
+    slot.classList.add("paw-badge-slot");
     container.appendChild(slot);
 
     mutationObservers[mutationObservers.length - 1].fire([{ target: container, addedNodes: [slot] }]);
@@ -1500,17 +1500,17 @@ test("search-badges.js: direct badge and tooltip UI contract", async (t) => {
 
     for (const data of cases) {
       api.renderTooltipContent(data, "https://www.vrbo.com/3000003", "3000003", true);
-      assert.ok(api.getSearchTooltip().querySelector(".vdp-tooltip-footer"));
+      assert.ok(api.getSearchTooltip().querySelector(".paw-tooltip-footer"));
     }
   });
 
   await t.test("updates, positions, opens, and dismisses a badge", async () => {
     const card = makeCard("direct-ui", "https://www.vrbo.com/3000003");
     api.bindSearchCard(card);
-    const badge = card.querySelector(".vdp-search-badge");
+    const badge = card.querySelector(".paw-search-badge");
 
     api.updateBadgeUi(badge, { status: "capped" });
-    assert.equal(badge.dataset.vdpStatus, "capped");
+    assert.equal(badge.dataset.pawStatus, "capped");
     api.updateBadgeUi(badge, { status: "unknown" });
     api.updateBadgeUi(badge, {
       status: "ok",
@@ -1529,7 +1529,7 @@ test("search-badges.js: direct badge and tooltip UI contract", async (t) => {
   await t.test("exercises badge and dialog keyboard handlers", async () => {
     const card = makeCard("events-ui", "https://www.vrbo.com/3000004");
     api.bindSearchCard(card);
-    const badge = card.querySelector(".vdp-search-badge");
+    const badge = card.querySelector(".paw-search-badge");
     const event = (type, extra = {}) => ({
       type,
       preventDefault() {},
@@ -1557,8 +1557,8 @@ test("search-badges.js: direct badge and tooltip UI contract", async (t) => {
   });
 
   await t.test("falls back to registry URL validation", () => {
-    const validate = globalThis.VdpSearchFetcher.validateListingUrl;
-    delete globalThis.VdpSearchFetcher.validateListingUrl;
+    const validate = globalThis.PawSearchFetcher.validateListingUrl;
+    delete globalThis.PawSearchFetcher.validateListingUrl;
     try {
       assert.equal(api.getListingValidation("http://www.vrbo.com/3000003"), null);
       assert.equal(api.getListingValidation("not a listing"), null);
@@ -1566,24 +1566,24 @@ test("search-badges.js: direct badge and tooltip UI contract", async (t) => {
       assert.equal(api.findCardListing(mockDocument.createElement("div")), null);
       assert.equal(api.resolveBadgeContainer(mockDocument.createElement("div")).tagName, "DIV");
     } finally {
-      globalThis.VdpSearchFetcher.validateListingUrl = validate;
+      globalThis.PawSearchFetcher.validateListingUrl = validate;
     }
   });
 
   await t.test("covers defensive and alternate orchestration branches", async () => {
     const moduleApi = require("../src/content/search-badges.js");
-    const originalRegistry = globalThis.VdpSiteRegistry;
+    const originalRegistry = globalThis.PawSiteRegistry;
     const originalWarn = console.warn;
     const warnings = [];
-    delete globalThis.VdpSiteRegistry;
+    delete globalThis.PawSiteRegistry;
     console.warn = (...args) => warnings.push(args);
     try {
       api.getSiteRegistry();
     } finally {
-      globalThis.VdpSiteRegistry = originalRegistry;
+      globalThis.PawSiteRegistry = originalRegistry;
       console.warn = originalWarn;
     }
-    assert.match(warnings[0][0], /VdpSiteRegistry is unavailable/);
+    assert.match(warnings[0][0], /PawSiteRegistry is unavailable/);
 
     const injected = moduleApi.createSearchBadges({
       siteRegistry: {
@@ -1613,8 +1613,8 @@ test("search-badges.js: direct badge and tooltip UI contract", async (t) => {
     assert.ok(api.getSearchStats().depthSamplesDropped > 0);
 
     const badge = mockDocument.createElement("div");
-    badge.dataset.vdpStatus = "capped";
-    badge.dataset.vdpText = "Hover or open listing";
+    badge.dataset.pawStatus = "capped";
+    badge.dataset.pawText = "Hover or open listing";
     api.updateBadgeUi(badge, { status: "capped" });
 
     globalThis.window.innerWidth = 100;
@@ -1649,7 +1649,7 @@ test("search-badges.js: direct badge and tooltip UI contract", async (t) => {
 
     const staleCard = makeCard("stale-ui", "https://www.vrbo.com/3000005");
     api.bindSearchCard(staleCard);
-    const staleBadge = staleCard.querySelector(".vdp-search-badge");
+    const staleBadge = staleCard.querySelector(".paw-search-badge");
     api.showTooltipForBadge(staleBadge, "3000005", "https://www.vrbo.com/3000005", false);
     staleCard.remove();
     await sleep(10);

@@ -1,19 +1,19 @@
 // Content-script controller: owns shared state and routes module events.
 (() => {
   function getSiteRegistry() {
-    if (globalThis.VdpSiteRegistry) return globalThis.VdpSiteRegistry;
-    console.warn("[vrbow] VdpSiteRegistry is unavailable; check script load order");
+    if (globalThis.PawSiteRegistry) return globalThis.PawSiteRegistry;
+    console.warn("[vrbow] PawSiteRegistry is unavailable; check script load order");
     return null;
   }
 
   const registry = getSiteRegistry();
-  const lifecycleApi = globalThis.VdpLifecycle || (
+  const lifecycleApi = globalThis.PawLifecycle || (
     typeof require === "function" ? require("./lifecycle.js") : null
   );
-  const panelApi = globalThis.VdpPdpPanel || (
+  const panelApi = globalThis.PawPdpPanel || (
     typeof require === "function" ? require("./pdp-panel.js") : null
   );
-  const searchApi = globalThis.VdpSearchBadges || (
+  const searchApi = globalThis.PawSearchBadges || (
     typeof require === "function" ? require("./search-badges.js") : null
   );
 
@@ -54,8 +54,8 @@
   }
 
   function searchEnabled(callback) {
-    lifecycle.storage.get(["vrbow_enable_search_badging"], (data) => {
-      callback(data?.vrbow_enable_search_badging === true);
+    lifecycle.storage.get(["paw_enable_search_badging"], (data) => {
+      callback(data?.paw_enable_search_badging === true);
     });
   }
 
@@ -73,7 +73,7 @@
     searchBadges.stop();
     pdpPanel.reset();
     if (pageKind !== "listing") return;
-    window.dispatchEvent(new CustomEvent("vdp-request-apollo-data"));
+    window.dispatchEvent(new CustomEvent("paw-request-apollo-data"));
     scheduleRescan(previousUrl ? 1200 : 1000);
     setTimeout(() => pdpPanel.scan(false), previousUrl ? 3200 : 3500);
   }
@@ -91,8 +91,8 @@
       clearTimeout(rescanTimer);
       rescanTimer = null;
     }
-    if (apolloDataListener) window.removeEventListener("vdp-apollo-data", apolloDataListener);
-    if (searchApolloDataListener) window.removeEventListener("vdp-search-apollo-data", searchApolloDataListener);
+    if (apolloDataListener) window.removeEventListener("paw-apollo-data", apolloDataListener);
+    if (searchApolloDataListener) window.removeEventListener("paw-search-apollo-data", searchApolloDataListener);
     searchBadges.stop();
     pdpPanel.reset();
   }
@@ -115,7 +115,7 @@
     withMutationsSuppressed,
     onPolicy: ({ policy }) => {
       lastPolicy = policy;
-      window.__vdpLastPolicy = policy;
+      window.__pawLastPolicy = policy;
     },
   });
 
@@ -133,7 +133,7 @@
     pdpPanel.setApolloData(event.detail);
     scheduleRescan(150);
   };
-  window.addEventListener("vdp-apollo-data", apolloDataListener);
+  window.addEventListener("paw-apollo-data", apolloDataListener);
 
   searchApolloDataListener = (event) => {
     if (!lifecycle.isContextValid()) {
@@ -142,7 +142,7 @@
     }
     searchBadges.setApolloData(event.detail);
   };
-  window.addEventListener("vdp-search-apollo-data", searchApolloDataListener);
+  window.addEventListener("paw-search-apollo-data", searchApolloDataListener);
 
   try {
     chrome.storage?.onChanged?.addListener?.((changes, area) => {
@@ -150,8 +150,8 @@
         lifecycle.__test.invalidate();
         return;
       }
-      if (area !== "local" || !changes.vrbow_enable_search_badging || !isSearchUrl(location.href)) return;
-      if (changes.vrbow_enable_search_badging.newValue === true) {
+      if (area !== "local" || !changes.paw_enable_search_badging || !isSearchUrl(location.href)) return;
+      if (changes.paw_enable_search_badging.newValue === true) {
         searchBadges.start();
       } else {
         searchBadges.stop();
@@ -171,14 +171,14 @@
         lifecycle.__test.invalidate();
         return;
       }
-      if (message?.type === "vdp-get-policy") {
+      if (message?.type === "paw-get-policy") {
         sendResponse({ policy: lastPolicy, url: location.href });
-      } else if (message?.type === "vdp-rescan") {
+      } else if (message?.type === "paw-rescan") {
         pdpPanel.scan(true).then(() => {
           if (lifecycle.isContextValid()) sendResponse({ policy: lastPolicy });
         });
         return true;
-      } else if (message?.type === "vdp-test-trigger-invalidation") {
+      } else if (message?.type === "paw-test-trigger-invalidation") {
         lifecycle.__test.invalidate("test");
         sendResponse({ ok: true });
       }

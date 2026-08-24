@@ -25,11 +25,11 @@
 // `window`, since the two worlds don't share objects directly.
 
 (() => {
-  const REQUEST_EVENT = "vdp-request-apollo-data";
-  const DATA_EVENT = "vdp-apollo-data";
-  const SEARCH_REQUEST_EVENT = "vdp-search-apollo-request";
-  const SEARCH_DATA_EVENT = "vdp-search-apollo-data";
-  const NAV_EVENT = "vdp-locationchange";
+  const REQUEST_EVENT = "paw-request-apollo-data";
+  const DATA_EVENT = "paw-apollo-data";
+  const SEARCH_REQUEST_EVENT = "paw-search-apollo-request";
+  const SEARCH_DATA_EVENT = "paw-search-apollo-data";
+  const NAV_EVENT = "paw-locationchange";
 
   let lastPayloadKey = null;
   let lastResolvedApolloKey = null;
@@ -212,10 +212,10 @@
   function tryDispatch(force) {
     const payload = extractFromApollo();
     const key = payloadKey(payload);
-    window.__vdpBridgeRan = true;
+    window.__pawBridgeRan = true;
     if (!force && key === lastPayloadKey) return payload;
     lastPayloadKey = key;
-    window.__vdpBridgeData = payload;
+    window.__pawBridgeData = payload;
     window.dispatchEvent(new CustomEvent(DATA_EVENT, { detail: payload }));
     return payload;
   }
@@ -283,7 +283,7 @@
     const propertyIds = Array.isArray(detail.propertyIds) ? detail.propertyIds : [];
     const payload = extractFromSearchApollo(propertyIds);
     payload.requestId = detail.requestId || null;
-    window.__vdpSearchBridgeData = payload;
+    window.__pawSearchBridgeData = payload;
     window.dispatchEvent(new CustomEvent(SEARCH_DATA_EVENT, { detail: payload }));
   });
 

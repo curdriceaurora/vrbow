@@ -23,10 +23,10 @@ async function captureLiveDemo() {
   console.log(`Navigating to ${testUrl}...`);
   await page.goto(testUrl, { waitUntil: "domcontentloaded", timeout: 45000 }).catch(e => console.log("Navigation:", e.message));
 
-  console.log("Waiting for Vrbow panel to mount on live page...");
+  console.log("Waiting for PawCheck panel to mount on live page...");
   try {
-    await page.waitForSelector("#vdp-panel", { timeout: 15000 });
-    console.log("Found #vdp-panel on live listing!");
+    await page.waitForSelector("#paw-panel", { timeout: 15000 });
+    console.log("Found #paw-panel on live listing!");
   } catch {
     console.log("Panel wait timed out, checking page state...");
   }

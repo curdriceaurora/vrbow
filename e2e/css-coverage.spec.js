@@ -44,61 +44,61 @@ test("exercises 100% of production theme rules across color schemes and forced c
       await page.goto(pathToFileURL(path.join(FIXTURES, fixture)).href);
 
       if (fixture.startsWith("panel")) {
-        const button = page.locator("#vdp-panel button").first();
+        const button = page.locator("#paw-panel button").first();
         await button.hover();
         await button.focus();
 
-        const jumpLink = page.locator("#vdp-panel .vdp-jump").first();
+        const jumpLink = page.locator("#paw-panel .paw-jump").first();
         await jumpLink.hover();
         await jumpLink.focus();
 
-        const searchBadge = page.locator(".vdp-search-badge").first();
+        const searchBadge = page.locator(".paw-search-badge").first();
         await searchBadge.hover();
         await searchBadge.focus();
 
-        const tooltipClose = page.locator(".vdp-tooltip-close");
+        const tooltipClose = page.locator(".paw-tooltip-close");
         await tooltipClose.hover();
         await tooltipClose.focus();
 
-        const tooltipLink = page.locator(".vdp-tooltip-footer a");
+        const tooltipLink = page.locator(".paw-tooltip-footer a");
         await tooltipLink.hover();
         await tooltipLink.focus();
 
-        await page.locator("#vdp-panel").evaluate((panel) => {
-          panel.classList.add("vdp-beside");
+        await page.locator("#paw-panel").evaluate((panel) => {
+          panel.classList.add("paw-beside");
           getComputedStyle(panel).width;
-          for (const row of panel.querySelectorAll(".vdp-row")) {
+          for (const row of panel.querySelectorAll(".paw-row")) {
             getComputedStyle(row).gridTemplateColumns;
           }
-          panel.classList.remove("vdp-beside");
-          panel.classList.add("vdp-collapsed");
-          const header = panel.querySelector(".vdp-header");
-          header.className = "vdp-header vdp-tone-bad";
+          panel.classList.remove("paw-beside");
+          panel.classList.add("paw-collapsed");
+          const header = panel.querySelector(".paw-header");
+          header.className = "paw-header paw-tone-bad";
           getComputedStyle(header).backgroundColor;
-          header.className = "vdp-header vdp-tone-unknown";
+          header.className = "paw-header paw-tone-unknown";
           getComputedStyle(header).backgroundColor;
-          header.className = "vdp-header vdp-tone-loading";
+          header.className = "paw-header paw-tone-loading";
           getComputedStyle(header).backgroundColor;
-          header.className = "vdp-header vdp-tone-capped";
+          header.className = "paw-header paw-tone-capped";
           getComputedStyle(header).backgroundColor;
-          // .vdp-row + .vdp-row (the inter-row hairline) is exercised
+          // .paw-row + .paw-row (the inter-row hairline) is exercised
           // naturally by any two adjacent rows in the fixture below.
         });
 
         await page.evaluate(() => {
-          for (const badge of document.querySelectorAll(".vdp-search-badge")) {
+          for (const badge of document.querySelectorAll(".paw-search-badge")) {
             getComputedStyle(badge).backgroundColor;
             getComputedStyle(badge).color;
           }
           const warnBadge = document.createElement("span");
-          warnBadge.className = "vdp-search-badge vdp-badge-warn";
+          warnBadge.className = "paw-search-badge paw-badge-warn";
           document.body.appendChild(warnBadge);
           getComputedStyle(warnBadge).backgroundColor;
 
-          for (const row of document.querySelectorAll(".vdp-tooltip-row")) {
+          for (const row of document.querySelectorAll(".paw-tooltip-row")) {
             getComputedStyle(row).borderTopStyle;
           }
-          for (const line of document.querySelectorAll(".vdp-tooltip-val-line")) {
+          for (const line of document.querySelectorAll(".paw-tooltip-val-line")) {
             getComputedStyle(line).display;
             getComputedStyle(line).marginTop;
           }
