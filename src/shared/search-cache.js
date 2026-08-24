@@ -8,7 +8,7 @@
   if (typeof module === "object" && module.exports) {
     module.exports = factory();
   } else {
-    root.VdpSearchCache = factory();
+    root.PawSearchCache = factory();
   }
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   "use strict";
@@ -128,7 +128,7 @@
   function resolveCacheKey(propId, urlHint) {
     if (!propId) return "";
     try {
-      const siteRegistry = (typeof globalThis !== "undefined" && globalThis.VdpSiteRegistry) ||
+      const siteRegistry = (typeof globalThis !== "undefined" && globalThis.PawSiteRegistry) ||
         (typeof require === "function" ? require("./site-registry.js") : null);
       if (siteRegistry && typeof siteRegistry.getCacheKey === "function") {
         return siteRegistry.getCacheKey(urlHint || propId, propId);

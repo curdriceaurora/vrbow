@@ -36,20 +36,20 @@
     const api = factory(registryModule);
     module.exports = api;
     if (typeof globalThis !== "undefined") {
-      globalThis.VdpAirbnbAdapter = api;
-      if (globalThis.VdpSiteRegistry && typeof globalThis.VdpSiteRegistry.registerSite === "function") {
-        globalThis.VdpSiteRegistry.registerSite(api.airbnbSite);
+      globalThis.PawAirbnbAdapter = api;
+      if (globalThis.PawSiteRegistry && typeof globalThis.PawSiteRegistry.registerSite === "function") {
+        globalThis.PawSiteRegistry.registerSite(api.airbnbSite);
       }
     }
   } else {
-    const api = factory(root.VdpSiteRegistry);
-    root.VdpAirbnbAdapter = api;
+    const api = factory(root.PawSiteRegistry);
+    root.PawAirbnbAdapter = api;
     // Self-register with the shared registry as soon as both are loaded.
     // manifest.json lists shared/site-registry.js before this file, so the
     // registry is always present here in the real extension; guarded for
     // any context (e.g. a future bundler) that might load this alone.
-    if (root.VdpSiteRegistry && typeof root.VdpSiteRegistry.registerSite === "function") {
-      root.VdpSiteRegistry.registerSite(api.airbnbSite);
+    if (root.PawSiteRegistry && typeof root.PawSiteRegistry.registerSite === "function") {
+      root.PawSiteRegistry.registerSite(api.airbnbSite);
     }
   }
 })(typeof globalThis !== "undefined" ? globalThis : this, function (registryModule) {

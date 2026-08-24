@@ -13,7 +13,7 @@
       require("./search-response-parser.js")
     );
   } else {
-    root.VdpSearchFetcher = factory(root.VdpBackoffLadder, root.VdpSearchCache, root.VdpSearchResponseParser);
+    root.PawSearchFetcher = factory(root.PawBackoffLadder, root.PawSearchCache, root.PawSearchResponseParser);
   }
 })(typeof globalThis !== "undefined" ? globalThis : this, function (backoffLadder, searchCache, parser) {
   "use strict";
@@ -24,11 +24,11 @@
 
   /**
    * Resolved lazily on every call (not captured once) so a site adapter registered
-   * after this module loads — or a test that reassigns globalThis.VdpSiteRegistry —
+   * after this module loads — or a test that reassigns globalThis.PawSiteRegistry —
    * is picked up immediately.
    */
   function getSiteRegistry() {
-    return (typeof globalThis !== "undefined" && globalThis.VdpSiteRegistry) ||
+    return (typeof globalThis !== "undefined" && globalThis.PawSiteRegistry) ||
       (typeof require === "function" ? require("./site-registry.js") : null);
   }
 

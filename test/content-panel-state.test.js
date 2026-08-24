@@ -19,7 +19,7 @@
 
 const { test, describe, before } = require("node:test");
 const assert = require("node:assert/strict");
-const { MockCustomEvent, MockEvent, installIntervalGuard, installVdpGlobals } = require("./helpers/content-env-stub.js");
+const { MockCustomEvent, MockEvent, installIntervalGuard, installPawGlobals } = require("./helpers/content-env-stub.js");
 
 let panelTest;
 let sparseStateMessage;
@@ -50,10 +50,10 @@ before(() => {
   // from keeping a real timer alive — this test process would otherwise
   // never exit.
   installIntervalGuard();
-  installVdpGlobals();
+  installPawGlobals();
 
   panelTest = require("../src/content/pdp-panel.js").createPdpPanel({
-    siteRegistry: globalThis.VdpSiteRegistry,
+    siteRegistry: globalThis.PawSiteRegistry,
     getListingIdFromUrl: () => null,
     isListingUrl: () => false,
     looksLikeListingPage: () => false,

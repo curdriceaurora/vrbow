@@ -7,7 +7,7 @@
   if (typeof module === "object" && module.exports) {
     module.exports = factory(require("./extract.js"));
   } else {
-    root.VdpSearchResponseParser = factory(root.VDPExtract || root.VdpExtract);
+    root.PawSearchResponseParser = factory(root.PawExtract);
   }
 })(typeof globalThis !== "undefined" ? globalThis : this, function (extract) {
   "use strict";
@@ -245,7 +245,7 @@
       const u = new URL(urlStr, baseUrl);
       if (u.protocol !== "https:") return null;
 
-      const siteRegistry = (typeof globalThis !== "undefined" && globalThis.VdpSiteRegistry) ||
+      const siteRegistry = (typeof globalThis !== "undefined" && globalThis.PawSiteRegistry) ||
         (typeof require === "function" ? require("./site-registry.js") : null);
       if (!siteRegistry) return null;
 

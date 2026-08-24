@@ -4,7 +4,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { createSearchFetchQueue, parseListingHtml } = require("../src/shared/search-fetcher.js");
-const { MockCustomEvent, MockEvent, installIntervalGuard, installVdpGlobals } = require("./helpers/content-env-stub.js");
+const { MockCustomEvent, MockEvent, installIntervalGuard, installPawGlobals } = require("./helpers/content-env-stub.js");
 
 test("search-fetcher request lifecycle & cancellation", async (t) => {
   await t.test("aborts active fetch requests on queue.dispose()", async () => {
@@ -601,8 +601,8 @@ function installHarness() {
     now: () => Date.now(),
   };
   installIntervalGuard();
-  installVdpGlobals();
-  globalThis.VdpSearchFetcher = {
+  installPawGlobals();
+  globalThis.PawSearchFetcher = {
     ...realFetcher,
     createSearchFetchQueue(options = {}) {
       const queue = realFetcher.createSearchFetchQueue({
@@ -1557,8 +1557,8 @@ test("search-badges.js: direct badge and tooltip UI contract", async (t) => {
   });
 
   await t.test("falls back to registry URL validation", () => {
-    const validate = globalThis.VdpSearchFetcher.validateListingUrl;
-    delete globalThis.VdpSearchFetcher.validateListingUrl;
+    const validate = globalThis.PawSearchFetcher.validateListingUrl;
+    delete globalThis.PawSearchFetcher.validateListingUrl;
     try {
       assert.equal(api.getListingValidation("http://www.vrbo.com/3000003"), null);
       assert.equal(api.getListingValidation("not a listing"), null);
@@ -1566,24 +1566,24 @@ test("search-badges.js: direct badge and tooltip UI contract", async (t) => {
       assert.equal(api.findCardListing(mockDocument.createElement("div")), null);
       assert.equal(api.resolveBadgeContainer(mockDocument.createElement("div")).tagName, "DIV");
     } finally {
-      globalThis.VdpSearchFetcher.validateListingUrl = validate;
+      globalThis.PawSearchFetcher.validateListingUrl = validate;
     }
   });
 
   await t.test("covers defensive and alternate orchestration branches", async () => {
     const moduleApi = require("../src/content/search-badges.js");
-    const originalRegistry = globalThis.VdpSiteRegistry;
+    const originalRegistry = globalThis.PawSiteRegistry;
     const originalWarn = console.warn;
     const warnings = [];
-    delete globalThis.VdpSiteRegistry;
+    delete globalThis.PawSiteRegistry;
     console.warn = (...args) => warnings.push(args);
     try {
       api.getSiteRegistry();
     } finally {
-      globalThis.VdpSiteRegistry = originalRegistry;
+      globalThis.PawSiteRegistry = originalRegistry;
       console.warn = originalWarn;
     }
-    assert.match(warnings[0][0], /VdpSiteRegistry is unavailable/);
+    assert.match(warnings[0][0], /PawSiteRegistry is unavailable/);
 
     const injected = moduleApi.createSearchBadges({
       siteRegistry: {

@@ -189,7 +189,7 @@ async function waitForPort(port, timeoutMs) {
 
 // A minimal control extension, loaded alongside the real one. It is the
 // only way to tell two very different situations apart, because both make
-// window.__vdpBridgeData absent:
+// window.__pawBridgeData absent:
 //
 //   the browser ignores --load-extension  -> emulate, manifest uncovered
 //   OUR manifest is broken (host match,   -> a real regression, and
@@ -214,7 +214,7 @@ function writeCanaryExtension() {
       2
     )
   );
-  fs.writeFileSync(path.join(dir, "canary.js"), `window.__vdpCanary = true;\n`);
+  fs.writeFileSync(path.join(dir, "canary.js"), `window.__pawCanary = true;\n`);
   return dir;
 }
 
@@ -439,7 +439,7 @@ async function checkListing(port, url, settleMs) {
     // alongside ours, so it answers "can this browser load extensions at
     // all" without depending on OUR manifest being correct.
     const probe = await cdp.send("Runtime.evaluate", {
-      expression: `JSON.stringify({ canary: !!window.__vdpCanary, bridge: !!window.__vdpBridgeRan || typeof window.__vdpBridgeData !== "undefined" })`,
+      expression: `JSON.stringify({ canary: !!window.__pawCanary, bridge: !!window.__pawBridgeRan || typeof window.__pawBridgeData !== "undefined" })`,
       returnByValue: true,
     });
     const { canary, bridge } = JSON.parse(probe.result.value);
@@ -506,7 +506,7 @@ async function checkListing(port, url, settleMs) {
     const panel = JSON.parse(panelRes.result.value);
 
     const mainRes = await cdp.send("Runtime.evaluate", {
-      expression: `JSON.stringify({ bridgeRan: !!window.__vdpBridgeRan, bridgeDataIsNull: window.__vdpBridgeData === null, bridgeItems: window.__vdpBridgeData?.items?.length ?? 0, policyLeaked: !!window.__pawLastPolicy })`,
+      expression: `JSON.stringify({ bridgeRan: !!window.__pawBridgeRan, bridgeDataIsNull: window.__pawBridgeData === null, bridgeItems: window.__pawBridgeData?.items?.length ?? 0, policyLeaked: !!window.__pawLastPolicy })`,
       returnByValue: true,
     });
     const main = JSON.parse(mainRes.result.value);

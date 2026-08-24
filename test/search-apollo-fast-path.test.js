@@ -270,8 +270,8 @@ test("8.1.1 listing-page sole fallback resolves once but is not reused after SPA
   bridge.window.location.href = "https://www.vrbo.com/5202987";
   const stalePayload = bridge.requestListing();
   assert.equal(stalePayload, null, "stale sole record from the previous listing must not populate the new page");
-  assert.equal(bridge.window.__vdpBridgeRan, true);
-  assert.equal(bridge.window.__vdpBridgeData, null);
+  assert.equal(bridge.window.__pawBridgeRan, true);
+  assert.equal(bridge.window.__pawBridgeData, null);
 });
 
 test("8.1.1 resolveSearchApolloRecord returns null for records with no concrete policy", () => {

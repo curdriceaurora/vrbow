@@ -4,13 +4,13 @@
   if (typeof module !== "undefined" && module.exports) {
     module.exports = api;
   } else {
-    root.VdpPdpPanel = api;
+    root.PawPdpPanel = api;
   }
 })(globalThis, (root) => {
   function createPdpPanel(deps = {}) {
     const PANEL_ID = "vdp-panel";
-    const { getSentences, isPetRelated, buildCorpus, extractPolicy } = root.VDPExtract;
-    const { escapeHtml } = root.VdpFormatters;
+    const { getSentences, isPetRelated, buildCorpus, extractPolicy } = root.PawExtract;
+    const { escapeHtml } = root.PawFormatters;
     const siteRegistry = deps.siteRegistry;
     const getListingIdFromUrl = deps.getListingIdFromUrl;
     const isListingUrl = deps.isListingUrl;
@@ -698,8 +698,8 @@
             feeValueLines = ["1st dog free", "subsequent fee applies"];
           }
         } else if (hasFeeAmount) {
-          feeDisplay = typeof VDPExtract?.formatCurrencyDisplay === "function"
-            ? `${VDPExtract.formatCurrencyDisplay(policy.fee.amount, policy.fee.currency)}${feePerStr}`
+          feeDisplay = typeof PawExtract?.formatCurrencyDisplay === "function"
+            ? `${PawExtract.formatCurrencyDisplay(policy.fee.amount, policy.fee.currency)}${feePerStr}`
             : `$${policy.fee.amount}${feePerStr}`;
         } else {
           feeDisplay = raw.fee || "Not specified";
@@ -716,7 +716,7 @@
         );
         if (policy.deposit || raw.deposit) {
           const depDisplay = policy.deposit && policy.deposit.amount !== null
-            ? (typeof VDPExtract?.formatCurrencyDisplay === "function" ? VDPExtract.formatCurrencyDisplay(policy.deposit.amount, policy.deposit.currency) : `$${policy.deposit.amount}`)
+            ? (typeof PawExtract?.formatCurrencyDisplay === "function" ? PawExtract.formatCurrencyDisplay(policy.deposit.amount, policy.deposit.currency) : `$${policy.deposit.amount}`)
             : raw.deposit;
           rowsHtml += row("Refundable deposit", depDisplay, "warn", raw.depositSnippet, raw.depositSource);
         }
@@ -908,8 +908,8 @@
       if (location.href !== startUrl) return;
       const rawPolicy = extractPolicy(entries);
       const propId = getListingIdFromUrl(startUrl);
-      const canonicalPolicy = typeof VDPExtract?.normalizePolicy === "function"
-        ? VDPExtract.normalizePolicy(rawPolicy, propId, "listing-page")
+      const canonicalPolicy = typeof PawExtract?.normalizePolicy === "function"
+        ? PawExtract.normalizePolicy(rawPolicy, propId, "listing-page")
         : rawPolicy;
       safeStorageSet({ pawLastPolicy: canonicalPolicy, pawLastUrl: startUrl });
       renderPanel(canonicalPolicy);

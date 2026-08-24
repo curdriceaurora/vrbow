@@ -256,17 +256,17 @@ describe("site-registry: Vrbo getPropertyId tiered extraction", () => {
     assert.equal(vrbo.getPropertyId("bad url"), null);
   });
 
-  test("delegates to VDPExtract when available", () => {
-    const origExtract = globalThis.VDPExtract;
+  test("delegates to PawExtract when available", () => {
+    const origExtract = globalThis.PawExtract;
     try {
-      globalThis.VDPExtract = {
+      globalThis.PawExtract = {
         extractPropertyId(url) {
           return url.includes("mock-extract") ? "mock-extract-id" : null;
         }
       };
       assert.equal(vrbo.getPropertyId("https://www.vrbo.com/mock-extract"), "mock-extract-id");
     } finally {
-      globalThis.VDPExtract = origExtract;
+      globalThis.PawExtract = origExtract;
     }
   });
 
@@ -274,34 +274,12 @@ describe("site-registry: Vrbo getPropertyId tiered extraction", () => {
     assert.equal(vrbo.isListingUrl("123456", "https://www.vrbo.com/"), true);
   });
 
-  test("delegates to VdpExtract when VDPExtract is absent", () => {
-    const origSearchFetcher = globalThis.VdpSearchFetcher;
-    const origExtract = globalThis.VDPExtract;
-    const origVdpExtract = globalThis.VdpExtract;
-    try {
-      delete globalThis.VdpSearchFetcher;
-      delete globalThis.VDPExtract;
-      globalThis.VdpExtract = {
-        extractPropertyId(url) {
-          return url.includes("mock-vdp") ? "mock-vdp-id" : null;
-        }
-      };
-      assert.equal(vrbo.getPropertyId("https://www.vrbo.com/mock-vdp"), "mock-vdp-id");
-    } finally {
-      globalThis.VdpSearchFetcher = origSearchFetcher;
-      globalThis.VDPExtract = origExtract;
-      globalThis.VdpExtract = origVdpExtract;
-    }
-  });
-
   test("falls back to built-in regex extractor when extract modules are unavailable", () => {
-    const origSearchFetcher = globalThis.VdpSearchFetcher;
-    const origExtract = globalThis.VDPExtract;
-    const origVdpExtract = globalThis.VdpExtract;
+    const origSearchFetcher = globalThis.PawSearchFetcher;
+    const origExtract = globalThis.PawExtract;
     try {
-      delete globalThis.VdpSearchFetcher;
-      delete globalThis.VDPExtract;
-      delete globalThis.VdpExtract;
+      delete globalThis.PawSearchFetcher;
+      delete globalThis.PawExtract;
 
       const standaloneRegistry = siteRegistry.__factory(null);
       const v = standaloneRegistry.getSiteForHostname("vrbo.com");
@@ -309,9 +287,8 @@ describe("site-registry: Vrbo getPropertyId tiered extraction", () => {
       assert.equal(v.getPropertyId("https://www.vrbo.com/pdp/p9999"), "9999");
       assert.equal(v.getPropertyId("https://www.vrbo.com/search"), null);
     } finally {
-      globalThis.VdpSearchFetcher = origSearchFetcher;
-      globalThis.VDPExtract = origExtract;
-      globalThis.VdpExtract = origVdpExtract;
+      globalThis.PawSearchFetcher = origSearchFetcher;
+      globalThis.PawExtract = origExtract;
     }
   });
 });
@@ -426,10 +403,10 @@ describe("site-registry: site adapter capabilities & DOM selectors", () => {
     assert.equal(siteRegistry.getCacheKey(customSite, "555"), "paw_cache_airbnb_555");
   });
 
-  test("parseListingData delegates to site adapter or VDPExtract", () => {
-    const origExtract = globalThis.VDPExtract;
+  test("parseListingData delegates to site adapter or PawExtract", () => {
+    const origExtract = globalThis.PawExtract;
     try {
-      globalThis.VDPExtract = {
+      globalThis.PawExtract = {
         extractListingData(html, url) {
           return { mockParsed: true, htmlLength: html.length, url };
         }
@@ -457,14 +434,14 @@ describe("site-registry: site adapter capabilities & DOM selectors", () => {
       assert.ok(vrboParsed);
       assert.equal(vrboParsed.policy?.maxDogs, 2);
     } finally {
-      globalThis.VDPExtract = origExtract;
+      globalThis.PawExtract = origExtract;
     }
   });
 
   test("parseListingData returns null for a resolved site with no parser of its own, instead of silently running Vrbo's parser against it", () => {
-    const origExtract = globalThis.VDPExtract;
+    const origExtract = globalThis.PawExtract;
     try {
-      globalThis.VDPExtract = {
+      globalThis.PawExtract = {
         extractListingData(html, url) {
           return { mockParsed: true, htmlLength: html.length, url };
         },
@@ -479,7 +456,7 @@ describe("site-registry: site adapter capabilities & DOM selectors", () => {
           "https://no-parser-test.example/listing/1",
           "<html>irrelevant</html>"
         );
-        assert.equal(result, null, "a resolved site with no parseListingData must return null, not fall through to VDPExtract's Vrbo-shaped parser");
+        assert.equal(result, null, "a resolved site with no parseListingData must return null, not fall through to PawExtract's Vrbo-shaped parser");
       } finally {
         siteRegistry.unregisterSite("no-parser-test");
       }
@@ -489,7 +466,7 @@ describe("site-registry: site adapter capabilities & DOM selectors", () => {
       const unresolved = siteRegistry.parseListingData("https://truly-unknown.example/x", "<html>test</html>");
       assert.deepEqual(unresolved, { mockParsed: true, htmlLength: 17, url: "https://truly-unknown.example/x" });
     } finally {
-      globalThis.VDPExtract = origExtract;
+      globalThis.PawExtract = origExtract;
     }
   });
 
