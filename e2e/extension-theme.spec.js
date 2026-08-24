@@ -97,7 +97,7 @@ for (const scheme of ["light", "dark"]) {
       // Listing page verification
       await page.goto(LISTING_URL);
 
-      const panel = page.locator("#vdp-panel");
+      const panel = page.locator("#paw-panel");
       await expect(panel).toBeVisible({ timeout: 8_000 });
       await expect(panel).toContainText("Dog policy");
       await expect(panel).toContainText("Max dogs");
@@ -105,19 +105,19 @@ for (const scheme of ["light", "dark"]) {
       await expect(panel).toContainText("$150");
       await expect(panel).toHaveCSS("background-color", EXPECTED[scheme].surface);
       await expect(panel).toHaveCSS("color", EXPECTED[scheme].text);
-      await expect(panel.locator(".vdp-tone-good").first()).toHaveCSS("color", EXPECTED[scheme].allowed);
+      await expect(panel.locator(".paw-tone-good").first()).toHaveCSS("color", EXPECTED[scheme].allowed);
 
       // Search page verification & content-script discovery
       await page.goto(SEARCH_URL);
-      const badge = page.locator(".vdp-search-badge").first();
+      const badge = page.locator(".paw-search-badge").first();
       await expect(badge).toBeVisible({ timeout: 8_000 });
-      await expect(badge).toHaveClass(/vdp-badge-allowed/);
+      await expect(badge).toHaveClass(/paw-badge-allowed/);
       await expect(badge).toHaveCSS("color", EXPECTED[scheme].allowed);
       await expect(badge).toHaveCSS("background-color", EXPECTED[scheme].allowedSurface);
 
-      const tooltip = page.locator(".vdp-search-tooltip");
-      const tooltipClose = tooltip.locator(".vdp-tooltip-close");
-      const tooltipLink = tooltip.locator(".vdp-tooltip-footer a");
+      const tooltip = page.locator(".paw-search-tooltip");
+      const tooltipClose = tooltip.locator(".paw-tooltip-close");
+      const tooltipLink = tooltip.locator(".paw-tooltip-footer a");
 
       // Keyboard Flow: Open on Enter
       await badge.focus();

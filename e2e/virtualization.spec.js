@@ -117,11 +117,11 @@ test("8.1.5: exercises card recycling, out-of-order response isolation, and SPA 
     await expect(card).toBeVisible();
 
     // Verify initial binding to Property A
-    const badge = card.locator(".vdp-search-badge");
+    const badge = card.locator(".paw-search-badge");
     await expect(badge).toBeVisible({ timeout: 6_000 });
-    await expect(badge).toHaveClass(/vdp-badge-loading/);
+    await expect(badge).toHaveClass(/paw-badge-loading/);
     await expect(badge).toContainText("Checking pet policy");
-    await expect(card).toHaveAttribute("data-vdp-prop-id", "1000001");
+    await expect(card).toHaveAttribute("data-paw-prop-id", "1000001");
 
     // 2. Recycle the existing card element to Property B while Property A is in-flight
     await page.evaluate(() => {
@@ -137,21 +137,21 @@ test("8.1.5: exercises card recycling, out-of-order response isolation, and SPA 
     });
 
     // Verify card re-binds to Property B
-    await expect(card).toHaveAttribute("data-vdp-prop-id", "2000002", { timeout: 6_000 });
-    await expect(card).toHaveAttribute("data-vdp-fetch-url", "https://www.vrbo.com/2000002");
-    await expect(card).toHaveAttribute("data-vdp-nav-url", "https://www.vrbo.com/2000002?chkin=2026-09-01&adults=2");
+    await expect(card).toHaveAttribute("data-paw-prop-id", "2000002", { timeout: 6_000 });
+    await expect(card).toHaveAttribute("data-paw-fetch-url", "https://www.vrbo.com/2000002");
+    await expect(card).toHaveAttribute("data-paw-nav-url", "https://www.vrbo.com/2000002?chkin=2026-09-01&adults=2");
 
     // 3. Property B response resolves first
-    await expect(badge).toHaveClass(/vdp-badge-allowed/, { timeout: 6_000 });
+    await expect(badge).toHaveClass(/paw-badge-allowed/, { timeout: 6_000 });
     await expect(badge).toContainText(/dogs allowed/i);
-    await expect(card.locator(".vdp-search-badge")).toHaveCount(1);
+    await expect(card.locator(".paw-search-badge")).toHaveCount(1);
 
     // Verify tooltip shows Property B and targets Property B navigation URL
     await badge.focus();
     await page.keyboard.press("Enter");
-    const tooltip = page.locator(".vdp-search-tooltip");
+    const tooltip = page.locator(".paw-search-tooltip");
     await expect(tooltip).toBeVisible();
-    const tooltipLink = tooltip.locator(".vdp-tooltip-footer a");
+    const tooltipLink = tooltip.locator(".paw-tooltip-footer a");
     await expect(tooltipLink).toHaveAttribute("href", "https://www.vrbo.com/2000002?chkin=2026-09-01&adults=2");
 
     // Close tooltip
@@ -163,11 +163,11 @@ test("8.1.5: exercises card recycling, out-of-order response isolation, and SPA 
     await page.waitForTimeout(200);
 
     // 5. Assert that delayed Property A response CANNOT overwrite Property B
-    await expect(badge).toHaveClass(/vdp-badge-allowed/);
+    await expect(badge).toHaveClass(/paw-badge-allowed/);
     await expect(badge).toContainText(/dogs allowed/i);
-    await expect(badge).not.toHaveClass(/vdp-badge-banned/);
-    await expect(card).toHaveAttribute("data-vdp-prop-id", "2000002");
-    await expect(card.locator(".vdp-search-badge")).toHaveCount(1);
+    await expect(badge).not.toHaveClass(/paw-badge-banned/);
+    await expect(card).toHaveAttribute("data-paw-prop-id", "2000002");
+    await expect(card.locator(".paw-search-badge")).toHaveCount(1);
 
     // Verify tooltip still targets Property B
     await badge.focus();
@@ -181,18 +181,18 @@ test("8.1.5: exercises card recycling, out-of-order response isolation, and SPA 
     await page.goto(LISTING_C_URL);
 
     // On listing page, search badges and tooltips should be cleaned up, and listing panel attached
-    const panel = page.locator("#vdp-panel");
+    const panel = page.locator("#paw-panel");
     await expect(panel).toBeVisible({ timeout: 6_000 });
     await expect(panel).toContainText("Dog policy");
-    await expect(page.locator(".vdp-search-badge")).toHaveCount(0);
+    await expect(page.locator(".paw-search-badge")).toHaveCount(0);
 
     // Navigate back to search page
     await page.goBack();
     const restoredCard = page.locator("#card-1");
     await expect(restoredCard).toBeVisible({ timeout: 6_000 });
-    const restoredBadge = restoredCard.locator(".vdp-search-badge");
+    const restoredBadge = restoredCard.locator(".paw-search-badge");
     await expect(restoredBadge).toBeVisible();
-    await expect(page.locator(".vdp-search-tooltip")).toHaveCount(1);
+    await expect(page.locator(".paw-search-tooltip")).toHaveCount(1);
 
     // 7. Verify zero uncaught errors
     expect(pageErrors).toEqual([]);
@@ -268,11 +268,11 @@ test("I3: recycling an off-screen card to a new href fires zero listing requests
     await page.goto(SEARCH_OFFSCREEN_URL);
 
     const card = page.locator("#card-1");
-    const badge = card.locator(".vdp-search-badge");
+    const badge = card.locator(".paw-search-badge");
 
     // The card binds and badges even while off-screen; only the fetch is gated.
-    await expect(card).toHaveAttribute("data-vdp-prop-id", "1000001", { timeout: 6_000 });
-    await expect(badge).toHaveClass(/vdp-badge-loading/);
+    await expect(card).toHaveAttribute("data-paw-prop-id", "1000001", { timeout: 6_000 });
+    await expect(badge).toHaveClass(/paw-badge-loading/);
 
     // Comfortably past the dwell window (400ms + up to 200ms jitter) and the
     // queue's dispatch delay.
@@ -292,18 +292,18 @@ test("I3: recycling an off-screen card to a new href fires zero listing requests
     });
 
     // Re-binding still happens off-screen — this is a fetch gate, not a bind gate.
-    await expect(card).toHaveAttribute("data-vdp-prop-id", "2000002", { timeout: 6_000 });
-    await expect(card).toHaveAttribute("data-vdp-fetch-url", "https://www.vrbo.com/2000002");
+    await expect(card).toHaveAttribute("data-paw-prop-id", "2000002", { timeout: 6_000 });
+    await expect(card).toHaveAttribute("data-paw-fetch-url", "https://www.vrbo.com/2000002");
 
     await page.waitForTimeout(2_000);
     expect(requestCounts["2000002"]).toBe(0);
     expect(requestCounts["1000001"]).toBe(0);
-    await expect(badge).toHaveClass(/vdp-badge-loading/);
+    await expect(badge).toHaveClass(/paw-badge-loading/);
 
     // The gate must be a gate, not a permanent block: scrolling the card into
     // view releases exactly one request for the property it now shows.
     await card.scrollIntoViewIfNeeded();
-    await expect(badge).toHaveClass(/vdp-badge-allowed/, { timeout: 8_000 });
+    await expect(badge).toHaveClass(/paw-badge-allowed/, { timeout: 8_000 });
     await expect(badge).toContainText(/dogs allowed/i);
     expect(requestCounts["2000002"]).toBe(1);
     expect(requestCounts["1000001"]).toBe(0);

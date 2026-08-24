@@ -137,7 +137,7 @@ async function run() {
         <div class="card-meta">3 beds · 2 baths · Sleeps 6 · 4.9 ★</div>
         <div class="card-price-row">
           <div class="card-price">$245 <span>/ night</span></div>
-          <div class="vdp-search-badge vdp-badge-loading" id="badge-1" tabindex="0" role="button">⏳ Checking pet policy...</div>
+          <div class="paw-search-badge paw-badge-loading" id="badge-1" tabindex="0" role="button">⏳ Checking pet policy...</div>
         </div>
       </div>
     </div>
@@ -150,35 +150,35 @@ async function run() {
         <div class="card-meta">4 beds · 3 baths · Sleeps 8 · 4.85 ★</div>
         <div class="card-price-row">
           <div class="card-price">$380 <span>/ night</span></div>
-          <div class="vdp-search-badge vdp-badge-loading" id="badge-2" tabindex="0" role="button">⏳ Checking pet policy...</div>
+          <div class="paw-search-badge paw-badge-loading" id="badge-2" tabindex="0" role="button">⏳ Checking pet policy...</div>
         </div>
       </div>
     </div>
   </div>
 
   <!-- Tooltip Dialog Mock -->
-  <div id="vdp-search-tooltip" class="vdp-search-tooltip" role="dialog" style="display: none; position: absolute; z-index: 10000;">
-    <div class="vdp-tooltip-header vdp-tone-good">
+  <div id="paw-search-tooltip" class="paw-search-tooltip" role="dialog" style="display: none; position: absolute; z-index: 10000;">
+    <div class="paw-tooltip-header paw-tone-good">
       <span>🐾 Dog Policy</span>
     </div>
-    <div class="vdp-tooltip-body">
-      <div class="vdp-tooltip-row">
-        <span class="vdp-tooltip-label">Status</span>
-        <span class="vdp-tooltip-value vdp-tone-good">Dogs allowed</span>
+    <div class="paw-tooltip-body">
+      <div class="paw-tooltip-row">
+        <span class="paw-tooltip-label">Status</span>
+        <span class="paw-tooltip-value paw-tone-good">Dogs allowed</span>
       </div>
-      <div class="vdp-tooltip-row">
-        <span class="vdp-tooltip-label">Max dogs</span>
-        <span class="vdp-tooltip-value">2</span>
+      <div class="paw-tooltip-row">
+        <span class="paw-tooltip-label">Max dogs</span>
+        <span class="paw-tooltip-value">2</span>
       </div>
-      <div class="vdp-tooltip-row">
-        <span class="vdp-tooltip-label">Weight limit</span>
-        <span class="vdp-tooltip-value">50 lbs</span>
+      <div class="paw-tooltip-row">
+        <span class="paw-tooltip-label">Weight limit</span>
+        <span class="paw-tooltip-value">50 lbs</span>
       </div>
-      <div class="vdp-tooltip-row">
-        <span class="vdp-tooltip-label">Pet fee</span>
-        <span class="vdp-tooltip-value">$150 per stay</span>
+      <div class="paw-tooltip-row">
+        <span class="paw-tooltip-label">Pet fee</span>
+        <span class="paw-tooltip-value">$150 per stay</span>
       </div>
-      <div class="vdp-tooltip-footer">
+      <div class="paw-tooltip-footer">
         <a href="#rules">View listing rules →</a>
       </div>
     </div>
@@ -209,11 +209,11 @@ async function run() {
   // 2. Resolve Card 1 and Card 2 badges after dwell
   await page.evaluate(() => {
     const b1 = document.getElementById("badge-1");
-    b1.className = "vdp-search-badge vdp-badge-allowed";
+    b1.className = "paw-search-badge paw-badge-allowed";
     b1.textContent = "🐾 Max 2 dogs allowed · 50 lbs · $150/stay";
 
     const b2 = document.getElementById("badge-2");
-    b2.className = "vdp-search-badge vdp-badge-allowed";
+    b2.className = "paw-search-badge paw-badge-allowed";
     b2.textContent = "🐾 Dogs allowed · 1st free · $25/add'l/stay";
   });
   await snap(10);
@@ -238,7 +238,7 @@ async function run() {
 
   // 4. Hover over Badge 1 and open Tooltip
   await page.evaluate(({ b1Box }) => {
-    const tip = document.getElementById("vdp-search-tooltip");
+    const tip = document.getElementById("paw-search-tooltip");
     tip.style.display = "block";
     tip.style.left = `${b1Box.x - 10}px`;
     tip.style.top = `${b1Box.y - 210}px`;
@@ -246,7 +246,7 @@ async function run() {
   await snap(16);
 
   // 5. Move cursor down over the tooltip link
-  const tipLinkBox = await page.locator("#vdp-search-tooltip a").boundingBox();
+  const tipLinkBox = await page.locator("#paw-search-tooltip a").boundingBox();
   const linkTargetX = tipLinkBox.x + tipLinkBox.width / 2;
   const linkTargetY = tipLinkBox.y + tipLinkBox.height / 2;
 
@@ -268,7 +268,7 @@ async function run() {
     const curY = linkTargetY + (startY - linkTargetY) * (i / 8);
     if (i === 3) {
       await page.evaluate(() => {
-        document.getElementById("vdp-search-tooltip").style.display = "none";
+        document.getElementById("paw-search-tooltip").style.display = "none";
       });
     }
     await page.evaluate(({ x, y }) => {

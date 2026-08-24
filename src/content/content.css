@@ -1,56 +1,56 @@
-#vdp-panel {
+#paw-panel {
   position: fixed;
   top: 96px;
   right: 16px;
   width: 400px;
   max-width: calc(100vw - 32px);
-  background: var(--vdp-color-surface);
+  background: var(--paw-color-surface);
   border-radius: 12px;
-  box-shadow: var(--vdp-shadow-panel);
+  box-shadow: var(--paw-shadow-panel);
   z-index: 2147483000;
-  font-family: var(--vdp-font-family);
+  font-family: var(--paw-font-family);
   font-size: 13px;
-  color: var(--vdp-color-text);
+  color: var(--paw-color-text);
   overflow: hidden;
-  border: 1px solid var(--vdp-color-border);
+  border: 1px solid var(--paw-color-border);
   box-sizing: border-box;
 }
 
-#vdp-panel.vdp-beside {
+#paw-panel.paw-beside {
   width: 340px;
 }
 
-#vdp-panel.vdp-beside .vdp-row {
+#paw-panel.paw-beside .paw-row {
   grid-template-columns: 104px 16px 1fr 8px 84px;
 }
 
-#vdp-panel .vdp-header {
+#paw-panel .paw-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
   cursor: pointer;
-  background: var(--vdp-color-surface-subtle);
-  border-bottom: 1px solid var(--vdp-color-border-subtle);
+  background: var(--paw-color-surface-subtle);
+  border-bottom: 1px solid var(--paw-color-border-subtle);
 }
 
-#vdp-panel .vdp-header.vdp-tone-good { background: var(--vdp-policy-allowed-surface); }
-#vdp-panel .vdp-header.vdp-tone-bad { background: var(--vdp-policy-prohibited-surface); }
-#vdp-panel .vdp-header.vdp-tone-unknown { background: var(--vdp-policy-unknown-surface); }
-#vdp-panel .vdp-header.vdp-tone-loading { background: var(--vdp-policy-loading-surface); }
-#vdp-panel .vdp-header.vdp-tone-capped { background: var(--vdp-policy-capped-surface); }
+#paw-panel .paw-header.paw-tone-good { background: var(--paw-policy-allowed-surface); }
+#paw-panel .paw-header.paw-tone-bad { background: var(--paw-policy-prohibited-surface); }
+#paw-panel .paw-header.paw-tone-unknown { background: var(--paw-policy-unknown-surface); }
+#paw-panel .paw-header.paw-tone-loading { background: var(--paw-policy-loading-surface); }
+#paw-panel .paw-header.paw-tone-capped { background: var(--paw-policy-capped-surface); }
 
-#vdp-panel .vdp-title {
+#paw-panel .paw-title {
   font-weight: 600;
   font-size: 13.5px;
 }
 
-#vdp-panel .vdp-header-btns {
+#paw-panel .paw-header-btns {
   display: flex;
   gap: 4px;
 }
 
-#vdp-panel .vdp-header-btns button {
+#paw-panel .paw-header-btns button {
   border: none;
   background: transparent;
   cursor: pointer;
@@ -58,25 +58,25 @@
   line-height: 1;
   padding: 4px 6px;
   border-radius: 6px;
-  color: var(--vdp-color-text-secondary);
+  color: var(--paw-color-text-secondary);
 }
 
-#vdp-panel .vdp-header-btns button:hover {
-  background: var(--vdp-color-surface-hover);
+#paw-panel .paw-header-btns button:hover {
+  background: var(--paw-color-surface-hover);
 }
 
-#vdp-panel :where(button, [tabindex]):focus-visible {
-  outline: 2px solid var(--vdp-color-focus-ring);
+#paw-panel :where(button, [tabindex]):focus-visible {
+  outline: 2px solid var(--paw-color-focus-ring);
   outline-offset: 2px;
 }
 
-#vdp-panel .vdp-body {
+#paw-panel .paw-body {
   padding: 4px 16px 14px;
   max-height: 320px;
   overflow-y: auto;
 }
 
-#vdp-panel.vdp-collapsed .vdp-body {
+#paw-panel.paw-collapsed .paw-body {
   display: none;
 }
 
@@ -93,7 +93,7 @@
    without ellipsis; it was still 64px — a track from when the panel
    itself was 280px wide — until the panel grew to 400px in #37 without
    the source column claiming any of that extra width. */
-#vdp-panel .vdp-row {
+#paw-panel .paw-row {
   display: grid;
   grid-template-columns: 116px 30px 1fr 8px 96px;
   align-items: baseline;
@@ -102,36 +102,36 @@
 
 /* A hairline between consecutive rows, not a border-bottom-then-strip-it-
    from-the-last-one: rows sit among sibling divs (group headers, the
-   notes toggle, the footer), so "the last .vdp-row" is never actually
+   notes toggle, the footer), so "the last .paw-row" is never actually
    the last child of its type and a :last-of-type/:last-child rule would
    silently never fire. The adjacent-sibling form only ever draws a line
    between two rows that are actually next to each other — none before
    the first row in a group, none after the last row overall. */
-#vdp-panel .vdp-row + .vdp-row {
-  border-top: 1px solid var(--vdp-color-border-subtle);
+#paw-panel .paw-row + .paw-row {
+  border-top: 1px solid var(--paw-color-border-subtle);
 }
 
-#vdp-panel .vdp-group-hd {
+#paw-panel .paw-group-hd {
   font-size: 10.5px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   font-weight: 600;
-  color: var(--vdp-color-text-muted);
+  color: var(--paw-color-text-muted);
   padding: 12px 0 4px;
 }
 
-#vdp-panel .vdp-group-hd:first-child {
+#paw-panel .paw-group-hd:first-child {
   padding-top: 4px;
 }
 
-/* Conflicting/alternate values sit inside the value cell (see .vdp-value)
+/* Conflicting/alternate values sit inside the value cell (see .paw-value)
    as a muted sub-line, not as a separate full-width callout below the
    row — that way the conflict stays visually attached to its field. */
-#vdp-panel .vdp-alt {
+#paw-panel .paw-alt {
   display: block;
   font-weight: 400;
   font-size: 11px;
-  color: var(--vdp-policy-warning-text);
+  color: var(--paw-policy-warning-text);
   margin-top: 4px;
   line-height: 1.4;
 }
@@ -140,11 +140,11 @@
    one comma-joined sentence — currently only the tiered-fee fallback
    text uses this (see content.js). Row height grows; the column never
    grows wider. */
-#vdp-panel .vdp-value-line {
+#paw-panel .paw-value-line {
   display: block;
 }
 
-#vdp-panel .vdp-value-line + .vdp-value-line {
+#paw-panel .paw-value-line + .paw-value-line {
   margin-top: 2px;
 }
 
@@ -152,18 +152,18 @@
    sparse-state summary's source line show the same string with the same
    weight, just in different positions — one full-width with a hairline
    divider above it, one folded straight into its parent block with none. */
-#vdp-panel .vdp-source-badge,
-#vdp-panel .vdp-unconfirmed-src {
+#paw-panel .paw-source-badge,
+#paw-panel .paw-unconfirmed-src {
   display: block;
   font-size: 10px;
-  color: var(--vdp-color-text-muted);
+  color: var(--paw-color-text-muted);
   opacity: 0.85;
 }
 
-#vdp-panel .vdp-source-badge {
+#paw-panel .paw-source-badge {
   margin-top: 10px;
   padding-top: 8px;
-  border-top: 1px solid var(--vdp-color-border-subtle);
+  border-top: 1px solid var(--paw-color-border-subtle);
   text-align: left;
 }
 
@@ -173,38 +173,38 @@
    from carrying the same structural weight as confirmed data — it
    contracts from the normal row layout rather than reusing it with
    "Not specified" filled in four times. */
-#vdp-panel .vdp-unconfirmed {
+#paw-panel .paw-unconfirmed {
   padding: 10px 0 6px;
 }
 
-#vdp-panel .vdp-unconfirmed-text {
+#paw-panel .paw-unconfirmed-text {
   margin: 0;
   font-size: 12px;
   line-height: 1.6;
-  color: var(--vdp-color-text-muted);
+  color: var(--paw-color-text-muted);
 }
 
-#vdp-panel .vdp-unconfirmed-src {
+#paw-panel .paw-unconfirmed-src {
   margin-top: 8px;
 }
 
-#vdp-panel .vdp-other-toggle {
+#paw-panel .paw-other-toggle {
   cursor: pointer;
   font-size: 12px;
   font-weight: 600;
-  color: var(--vdp-color-text-secondary);
+  color: var(--paw-color-text-secondary);
   padding: 8px 0 4px;
-  border-top: 1px dashed var(--vdp-color-border);
+  border-top: 1px dashed var(--paw-color-border);
   margin-top: 4px;
 }
 
-#vdp-panel .vdp-other-list {
+#paw-panel .paw-other-list {
   display: none;
   flex-direction: column;
   gap: 6px;
 }
 
-#vdp-panel .vdp-other-list.vdp-visible {
+#paw-panel .paw-other-list.paw-visible {
   display: flex;
 }
 
@@ -212,17 +212,17 @@
    long it runs) and the source is a separate line below, right-justified
    — so a long quote never drags the attribution into an awkward mid-line
    wrap the way one trailing-inline sentence used to. */
-#vdp-panel .vdp-other-item {
+#paw-panel .paw-other-item {
   font-size: 11.5px;
-  color: var(--vdp-color-text-secondary);
-  background: var(--vdp-color-surface-subtle);
-  border-left: 2px solid var(--vdp-color-border);
+  color: var(--paw-color-text-secondary);
+  background: var(--paw-color-surface-subtle);
+  border-left: 2px solid var(--paw-color-border);
   border-radius: 4px;
   padding: 8px 10px;
   line-height: 1.4;
 }
 
-#vdp-panel .vdp-other-quote {
+#paw-panel .paw-other-quote {
   display: block;
   font-style: italic;
 }
@@ -230,39 +230,39 @@
 /* Multiple quotes attributed to the same source share one card. The
    quote marks each line already carries are enough of a boundary — a
    divider on top would be redundant, so this is spacing only. */
-#vdp-panel .vdp-other-quote + .vdp-other-quote {
+#paw-panel .paw-other-quote + .paw-other-quote {
   margin-top: 8px;
 }
 
-#vdp-panel .vdp-other-source {
+#paw-panel .paw-other-source {
   display: block;
   text-align: right;
   margin-top: 6px;
-  color: var(--vdp-color-text-muted);
+  color: var(--paw-color-text-muted);
   font-style: italic;
   font-size: 10.5px;
 }
 
-#vdp-panel .vdp-label {
+#paw-panel .paw-label {
   grid-column: 1;
-  color: var(--vdp-color-text-secondary);
+  color: var(--paw-color-text-secondary);
   font-weight: 500;
   text-align: right;
   align-self: start;
   padding-top: 1px;
 }
 
-#vdp-panel .vdp-value {
+#paw-panel .paw-value {
   grid-column: 3;
   font-weight: 600;
 }
 
-.vdp-tone-good { color: var(--vdp-policy-allowed-text); }
-.vdp-tone-bad { color: var(--vdp-policy-prohibited-text); }
-.vdp-tone-warn { color: var(--vdp-policy-warning-text); }
-.vdp-tone-unknown { color: var(--vdp-policy-unknown-text); }
-.vdp-tone-loading { color: var(--vdp-policy-loading-text); }
-.vdp-tone-capped { color: var(--vdp-policy-capped-text); }
+.paw-tone-good { color: var(--paw-policy-allowed-text); }
+.paw-tone-bad { color: var(--paw-policy-prohibited-text); }
+.paw-tone-warn { color: var(--paw-policy-warning-text); }
+.paw-tone-unknown { color: var(--paw-policy-unknown-text); }
+.paw-tone-loading { color: var(--paw-policy-loading-text); }
+.paw-tone-capped { color: var(--paw-policy-capped-text); }
 
 /* Labeled jump link: shows the lowest-level, linkable source name (see
    shortSourceLabel in content.js) plus a trailing arrow as the
@@ -272,13 +272,13 @@
    Truncation is done here by real rendered width (max-width tied to the
    96px source track + ellipsis), not by guessing a character count in
    JS — the full label is still available via the button's title. */
-#vdp-panel .vdp-jump {
+#paw-panel .paw-jump {
   grid-column: 5;
   justify-self: end;
   max-width: 100%;
   border: none;
   background: none;
-  color: var(--vdp-color-link);
+  color: var(--paw-color-link);
   font: inherit;
   font-size: 11px;
   font-weight: 600;
@@ -291,34 +291,34 @@
   white-space: nowrap;
 }
 
-#vdp-panel .vdp-jump:hover,
-#vdp-panel .vdp-jump:focus-visible {
+#paw-panel .paw-jump:hover,
+#paw-panel .paw-jump:focus-visible {
   text-decoration: underline;
 }
 
-#vdp-panel .vdp-jump-arrow {
+#paw-panel .paw-jump-arrow {
   font-weight: 400;
 }
 
-#vdp-panel .vdp-empty {
-  color: var(--vdp-color-text-muted);
+#paw-panel .paw-empty {
+  color: var(--paw-color-text-muted);
   line-height: 1.4;
   padding: 4px 0;
 }
 
-.vdp-highlight {
-  outline: 3px solid var(--vdp-color-highlight-ring) !important;
+.paw-highlight {
+  outline: 3px solid var(--paw-color-highlight-ring) !important;
   outline-offset: 2px;
   border-radius: 4px;
   transition: outline-color 0.3s ease;
 }
 
 /* Elevate container hosting badge above full-card anchor overlays.
-   Selects on .vdp-badge-slot, not .vdp-search-badge: the slot is the badge's
-   direct parent, so :has(> .vdp-search-badge) would match the slot itself and
+   Selects on .paw-badge-slot, not .paw-search-badge: the slot is the badge's
+   direct parent, so :has(> .paw-search-badge) would match the slot itself and
    elevate one level too low. content.js sets the same three properties inline
    on this element — the two must stay on the same node. */
-[data-vdp-prop-id] :has(> .vdp-badge-slot) {
+[data-paw-prop-id] :has(> .paw-badge-slot) {
   position: relative !important;
   z-index: 2 !important;
   pointer-events: auto !important;
@@ -337,7 +337,7 @@
                                   child: forcing full width would push the
                                   host's content out. The contract there is only
                                   that the badge never overflows. */
-.vdp-badge-slot {
+.paw-badge-slot {
   display: block;
   width: 100%;
   flex-basis: 100%;
@@ -345,7 +345,7 @@
 }
 
 /* Search Results Inline Badge */
-.vdp-search-badge {
+.paw-search-badge {
   display: flex;
   width: 100%;
   /* Required, not cosmetic: without it the 8px horizontal padding and 1px
@@ -362,12 +362,12 @@
   padding: 4px 8px;
   margin: 6px 0;
   border-radius: 6px;
-  font-family: var(--vdp-font-family);
+  font-family: var(--paw-font-family);
   font-size: 11.5px;
   font-weight: 600;
   line-height: 1.3;
   cursor: pointer;
-  border: 1px solid var(--vdp-color-border-subtle);
+  border: 1px solid var(--paw-color-border-subtle);
   transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
   user-select: none;
   z-index: 100 !important;
@@ -375,264 +375,264 @@
   pointer-events: auto !important;
 }
 
-.vdp-search-badge:hover,
-.vdp-search-badge:focus-visible {
+.paw-search-badge:hover,
+.paw-search-badge:focus-visible {
   transform: translateY(-1px);
-  box-shadow: var(--vdp-shadow-panel);
-  outline: 2px solid var(--vdp-color-focus-ring);
+  box-shadow: var(--paw-shadow-panel);
+  outline: 2px solid var(--paw-color-focus-ring);
   outline-offset: 1px;
 }
 
-.vdp-search-badge.vdp-badge-allowed {
-  background: var(--vdp-policy-allowed-surface);
-  color: var(--vdp-policy-allowed-text);
-  border-color: var(--vdp-policy-allowed-surface);
+.paw-search-badge.paw-badge-allowed {
+  background: var(--paw-policy-allowed-surface);
+  color: var(--paw-policy-allowed-text);
+  border-color: var(--paw-policy-allowed-surface);
 }
 
-.vdp-search-badge.vdp-badge-banned {
-  background: var(--vdp-policy-prohibited-surface);
-  color: var(--vdp-policy-prohibited-text);
-  border-color: var(--vdp-policy-prohibited-surface);
+.paw-search-badge.paw-badge-banned {
+  background: var(--paw-policy-prohibited-surface);
+  color: var(--paw-policy-prohibited-text);
+  border-color: var(--paw-policy-prohibited-surface);
 }
 
-.vdp-search-badge.vdp-badge-loading {
-  background: var(--vdp-policy-loading-surface);
-  color: var(--vdp-policy-loading-text);
-  border-color: var(--vdp-color-border-subtle);
+.paw-search-badge.paw-badge-loading {
+  background: var(--paw-policy-loading-surface);
+  color: var(--paw-policy-loading-text);
+  border-color: var(--paw-color-border-subtle);
   font-weight: 500;
 }
 
-.vdp-search-badge.vdp-badge-unknown {
-  background: var(--vdp-policy-unknown-surface);
-  color: var(--vdp-policy-unknown-text);
-  border-color: var(--vdp-color-border-subtle);
+.paw-search-badge.paw-badge-unknown {
+  background: var(--paw-policy-unknown-surface);
+  color: var(--paw-policy-unknown-text);
+  border-color: var(--paw-color-border-subtle);
 }
 
-.vdp-search-badge.vdp-badge-capped {
-  background: var(--vdp-policy-capped-surface);
-  color: var(--vdp-policy-capped-text);
-  border-color: var(--vdp-policy-capped-surface);
+.paw-search-badge.paw-badge-capped {
+  background: var(--paw-policy-capped-surface);
+  color: var(--paw-policy-capped-text);
+  border-color: var(--paw-policy-capped-surface);
 }
 
-.vdp-search-badge.vdp-badge-restrictions,
-.vdp-search-badge.vdp-badge-warn {
-  background: var(--vdp-policy-warning-surface);
-  color: var(--vdp-policy-warning-text);
-  border-color: var(--vdp-policy-warning-surface);
+.paw-search-badge.paw-badge-restrictions,
+.paw-search-badge.paw-badge-warn {
+  background: var(--paw-policy-warning-surface);
+  color: var(--paw-policy-warning-text);
+  border-color: var(--paw-policy-warning-surface);
 }
 
 /* Floating Hover & Focus Policy Tooltip */
-.vdp-search-tooltip {
+.paw-search-tooltip {
   position: fixed;
   width: 290px;
   max-width: calc(100vw - 32px);
-  background: var(--vdp-color-surface);
+  background: var(--paw-color-surface);
   border-radius: 12px;
-  box-shadow: var(--vdp-shadow-panel);
-  border: 1px solid var(--vdp-color-border);
+  box-shadow: var(--paw-shadow-panel);
+  border: 1px solid var(--paw-color-border);
   padding: 12px;
   z-index: 2147483640;
-  font-family: var(--vdp-font-family);
+  font-family: var(--paw-font-family);
   font-size: 12px;
-  color: var(--vdp-color-text);
+  color: var(--paw-color-text);
   pointer-events: auto;
   opacity: 0;
   transform: translateY(4px);
   transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
-.vdp-search-tooltip.vdp-tooltip-visible {
+.paw-search-tooltip.paw-tooltip-visible {
   opacity: 1;
   transform: translateY(0);
 }
 
-.vdp-tooltip-header {
+.paw-tooltip-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding-bottom: 8px;
   margin-bottom: 8px;
-  border-bottom: 1px solid var(--vdp-color-border-subtle);
+  border-bottom: 1px solid var(--paw-color-border-subtle);
   font-weight: 700;
   font-size: 13px;
-  color: var(--vdp-color-text);
+  color: var(--paw-color-text);
 }
 
-.vdp-tooltip-close {
+.paw-tooltip-close {
   background: transparent;
   border: none;
   font-size: 14px;
   cursor: pointer;
-  color: var(--vdp-color-text-secondary);
+  color: var(--paw-color-text-secondary);
   padding: 2px 4px;
   border-radius: 4px;
 }
 
-.vdp-tooltip-close:hover {
-  background: var(--vdp-color-surface-hover);
+.paw-tooltip-close:hover {
+  background: var(--paw-color-surface-hover);
 }
 
-.vdp-tooltip-close:focus-visible {
-  outline: 2px solid var(--vdp-color-focus-ring);
+.paw-tooltip-close:focus-visible {
+  outline: 2px solid var(--paw-color-focus-ring);
   outline-offset: 2px;
 }
 
-.vdp-tooltip-row {
+.paw-tooltip-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 5px 0;
 }
 
-.vdp-tooltip-row + .vdp-tooltip-row {
-  border-top: 1px solid var(--vdp-color-border-subtle);
+.paw-tooltip-row + .paw-tooltip-row {
+  border-top: 1px solid var(--paw-color-border-subtle);
 }
 
-.vdp-tooltip-label {
-  color: var(--vdp-color-text-secondary);
+.paw-tooltip-label {
+  color: var(--paw-color-text-secondary);
   font-weight: 500;
   font-size: 11.5px;
 }
 
-.vdp-tooltip-val {
+.paw-tooltip-val {
   font-weight: 600;
   font-size: 11.5px;
   text-align: right;
-  color: var(--vdp-color-text);
+  color: var(--paw-color-text);
   line-height: 1.35;
 }
 
-.vdp-tooltip-val-line {
+.paw-tooltip-val-line {
   display: block;
 }
 
-.vdp-tooltip-val-line + .vdp-tooltip-val-line {
+.paw-tooltip-val-line + .paw-tooltip-val-line {
   margin-top: 2px;
 }
 
-.vdp-tooltip-notes {
+.paw-tooltip-notes {
   margin-top: 8px;
   padding: 6px 8px;
-  background: var(--vdp-color-surface-subtle);
+  background: var(--paw-color-surface-subtle);
   border-radius: 6px;
   font-size: 11px;
-  color: var(--vdp-color-text-secondary);
+  color: var(--paw-color-text-secondary);
   line-height: 1.4;
   max-height: 80px;
   overflow-y: auto;
 }
 
-.vdp-tooltip-notes.vdp-tone-warn {
-  background: var(--vdp-policy-warning-surface);
-  color: var(--vdp-policy-warning-text);
-  border-left: 2px solid var(--vdp-policy-warning-text);
+.paw-tooltip-notes.paw-tone-warn {
+  background: var(--paw-policy-warning-surface);
+  color: var(--paw-policy-warning-text);
+  border-left: 2px solid var(--paw-policy-warning-text);
 }
 
-.vdp-tooltip-footer {
+.paw-tooltip-footer {
   margin-top: 8px;
   padding-top: 6px;
-  border-top: 1px solid var(--vdp-color-border-subtle);
+  border-top: 1px solid var(--paw-color-border-subtle);
   font-size: 10.5px;
-  color: var(--vdp-color-text-muted);
+  color: var(--paw-color-text-muted);
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.vdp-tooltip-footer a {
-  color: var(--vdp-color-link);
+.paw-tooltip-footer a {
+  color: var(--paw-color-link);
   text-decoration: none;
   font-weight: 600;
 }
 
-.vdp-tooltip-footer a:hover {
+.paw-tooltip-footer a:hover {
   text-decoration: underline;
 }
 
-.vdp-tooltip-footer a:focus-visible {
-  outline: 2px solid var(--vdp-color-focus-ring);
+.paw-tooltip-footer a:focus-visible {
+  outline: 2px solid var(--paw-color-focus-ring);
   outline-offset: 2px;
 }
 
 @media (forced-colors: active) {
-  #vdp-panel {
+  #paw-panel {
     border: 2px solid CanvasText;
   }
 
-  #vdp-panel .vdp-header {
+  #paw-panel .paw-header {
     border-bottom: 1px solid CanvasText;
   }
 
-  #vdp-panel .vdp-header-btns button {
+  #paw-panel .paw-header-btns button {
     border: 1px solid ButtonText;
   }
 
-  #vdp-panel .vdp-row + .vdp-row {
+  #paw-panel .paw-row + .paw-row {
     border-top: 1px solid CanvasText;
   }
 
-  #vdp-panel .vdp-other-item {
+  #paw-panel .paw-other-item {
     border: 1px solid CanvasText;
   }
 
-  #vdp-panel .vdp-jump {
+  #paw-panel .paw-jump {
     color: LinkText;
     text-decoration: underline;
   }
 
-  #vdp-panel :where(button, [tabindex]):focus-visible {
+  #paw-panel :where(button, [tabindex]):focus-visible {
     outline: 2px solid Highlight;
     outline-offset: 2px;
   }
 
-  .vdp-highlight {
+  .paw-highlight {
     outline: 3px solid Highlight !important;
   }
 
-  .vdp-search-badge {
+  .paw-search-badge {
     border: 1px solid ButtonText;
   }
 
-  .vdp-search-badge:focus-visible {
+  .paw-search-badge:focus-visible {
     outline: 2px solid Highlight;
     outline-offset: 2px;
   }
 
-  .vdp-search-tooltip {
+  .paw-search-tooltip {
     border: 2px solid CanvasText;
   }
 
-  .vdp-tooltip-header {
+  .paw-tooltip-header {
     border-bottom: 1px solid CanvasText;
   }
 
-  .vdp-tooltip-close {
+  .paw-tooltip-close {
     border: 1px solid ButtonText;
   }
 
-  .vdp-tooltip-close:focus-visible {
+  .paw-tooltip-close:focus-visible {
     outline: 2px solid Highlight;
     outline-offset: 2px;
   }
 
-  .vdp-tooltip-row + .vdp-tooltip-row {
+  .paw-tooltip-row + .paw-tooltip-row {
     border-top: 1px solid CanvasText;
   }
 
-  .vdp-tooltip-notes {
+  .paw-tooltip-notes {
     border: 1px solid CanvasText;
   }
 
-  .vdp-tooltip-footer {
+  .paw-tooltip-footer {
     border-top: 1px solid CanvasText;
   }
 
-  .vdp-tooltip-footer a {
+  .paw-tooltip-footer a {
     color: LinkText;
     text-decoration: underline;
   }
 
-  .vdp-tooltip-footer a:focus-visible {
+  .paw-tooltip-footer a:focus-visible {
     outline: 2px solid Highlight;
     outline-offset: 2px;
   }

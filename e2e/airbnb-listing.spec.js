@@ -50,14 +50,14 @@ test.describe("Airbnb adapter: real extension end-to-end (issue #12)", () => {
 
       await page.goto(LISTING_URL);
 
-      const panel = page.locator("#vdp-panel");
+      const panel = page.locator("#paw-panel");
       await expect(panel).toBeVisible({ timeout: 6000 });
-      await expect(panel.locator(".vdp-title")).toHaveText("Dog policy");
-      await expect(panel.locator(".vdp-header")).toHaveClass(/vdp-tone-good/);
+      await expect(panel.locator(".paw-title")).toHaveText("Dog policy");
+      await expect(panel.locator(".paw-header")).toHaveClass(/paw-tone-good/);
 
-      const sparseText = panel.locator(".vdp-unconfirmed-text");
+      const sparseText = panel.locator(".paw-unconfirmed-text");
       await expect(sparseText).toHaveText(/Allowed, no additional restrictions listed/);
-      await expect(sparseText).toHaveClass(/vdp-tone-good/);
+      await expect(sparseText).toHaveClass(/paw-tone-good/);
 
       // The generic "weren't stated" wording, unqualified by "Allowed",
       // must not also be present — this is the distinct branch, not a
@@ -86,7 +86,7 @@ test.describe("Airbnb adapter: real extension end-to-end (issue #12)", () => {
 
       await page.goto(LISTING_URL);
 
-      const panel = page.locator("#vdp-panel");
+      const panel = page.locator("#paw-panel");
       await expect(panel).toBeVisible({ timeout: 6000 });
       await expect(panel).not.toContainText(/Allowed, no additional restrictions listed/);
       await expect(panel).toContainText(/Fee/);

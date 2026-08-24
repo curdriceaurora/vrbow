@@ -70,7 +70,7 @@ test.describe("Extension Context Invalidation Handling", () => {
 
       await page.goto("https://www.vrbo.com/5442123");
 
-      const panel = page.locator("#vdp-panel");
+      const panel = page.locator("#paw-panel");
       await expect(panel).toBeVisible({ timeout: 6000 });
 
       // Simulate extension context invalidation via a genuine extension-only
@@ -82,7 +82,7 @@ test.describe("Extension Context Invalidation Handling", () => {
       await popup.goto(`chrome-extension://${extensionId}/popup/popup.html`);
       await popup.evaluate(async () => {
         const [tab] = await chrome.tabs.query({ url: "*://*.vrbo.com/*" });
-        await chrome.tabs.sendMessage(tab.id, { type: "vdp-test-trigger-invalidation" });
+        await chrome.tabs.sendMessage(tab.id, { type: "paw-test-trigger-invalidation" });
       });
       await popup.close();
 
@@ -93,7 +93,7 @@ test.describe("Extension Context Invalidation Handling", () => {
       // just removing the panel once: re-firing a location change after
       // cleanup must not resurrect it or throw.
       await page.evaluate(() => {
-        window.dispatchEvent(new Event("vdp-locationchange"));
+        window.dispatchEvent(new Event("paw-locationchange"));
       });
       await page.waitForTimeout(1200);
       await expect(panel).not.toBeVisible();

@@ -31,8 +31,8 @@ async function captureLiveSearchDemo() {
 
   console.log("Waiting for search badges to inject on real property cards...");
   try {
-    await page.waitForSelector(".vdp-search-badge", { timeout: 20000 });
-    console.log("Found .vdp-search-badge on live search results!");
+    await page.waitForSelector(".paw-search-badge", { timeout: 20000 });
+    console.log("Found .paw-search-badge on live search results!");
   } catch (e) {
     console.log("Waiting for badges timed out:", e.message);
   }
@@ -41,7 +41,7 @@ async function captureLiveSearchDemo() {
 
   // Hover over the first badge using dispatchEvent / mouse.move
   const badgeInfo = await page.evaluate(() => {
-    const b = document.querySelector(".vdp-search-badge");
+    const b = document.querySelector(".paw-search-badge");
     if (!b) return null;
     b.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
     const rect = b.getBoundingClientRect();

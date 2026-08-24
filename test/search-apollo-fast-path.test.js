@@ -79,10 +79,10 @@ function loadBridge(apolloState, opts = {}) {
     const onData = (e) => {
       response = e.detail;
     };
-    windowObj.addEventListener("vdp-search-apollo-data", onData);
-    const req = new MockCustomEvent("vdp-search-apollo-request", { detail: { propertyIds, requestId } });
+    windowObj.addEventListener("paw-search-apollo-data", onData);
+    const req = new MockCustomEvent("paw-search-apollo-request", { detail: { propertyIds, requestId } });
     windowObj.dispatchEvent(req);
-    windowObj.removeEventListener("vdp-search-apollo-data", onData);
+    windowObj.removeEventListener("paw-search-apollo-data", onData);
     return response;
   }
 
@@ -91,10 +91,10 @@ function loadBridge(apolloState, opts = {}) {
     const onData = (e) => {
       response = e.detail;
     };
-    windowObj.addEventListener("vdp-apollo-data", onData);
-    const req = new MockCustomEvent("vdp-request-apollo-data", {});
+    windowObj.addEventListener("paw-apollo-data", onData);
+    const req = new MockCustomEvent("paw-request-apollo-data", {});
     windowObj.dispatchEvent(req);
-    windowObj.removeEventListener("vdp-apollo-data", onData);
+    windowObj.removeEventListener("paw-apollo-data", onData);
     return response;
   }
 

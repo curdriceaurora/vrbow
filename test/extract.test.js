@@ -274,42 +274,42 @@ test("fees and deposits", async (t) => {
     const approvalPolicy = { petsAllowed: null, approvalRequired: true };
     const approvalBadge = deriveSearchBadge(approvalPolicy);
     assert.equal(approvalBadge.statusKey, "restrictions");
-    assert.equal(approvalBadge.className, "vdp-search-badge vdp-badge-restrictions");
+    assert.equal(approvalBadge.className, "paw-search-badge paw-badge-restrictions");
     assert.equal(approvalBadge.text, "Pet restrictions · Approval required");
 
     // 2. Restrictions found only (no affirmative petsAllowed)
     const restrictionsPolicy = { petsAllowed: null, restrictionsFound: true };
     const restrictionsBadge = deriveSearchBadge(restrictionsPolicy);
     assert.equal(restrictionsBadge.statusKey, "restrictions");
-    assert.equal(restrictionsBadge.className, "vdp-search-badge vdp-badge-restrictions");
+    assert.equal(restrictionsBadge.className, "paw-search-badge paw-badge-restrictions");
     assert.equal(restrictionsBadge.text, "Pet restrictions");
 
     // 3. Weight limit only (no affirmative petsAllowed)
     const weightOnlyPolicy = { petsAllowed: null, weightLimit: { value: 50, unit: "lb", pounds: 50 } };
     const weightBadge = deriveSearchBadge(weightOnlyPolicy);
     assert.equal(weightBadge.statusKey, "restrictions");
-    assert.equal(weightBadge.className, "vdp-search-badge vdp-badge-restrictions");
+    assert.equal(weightBadge.className, "paw-search-badge paw-badge-restrictions");
     assert.equal(weightBadge.text, "Pet restrictions · 50 lbs");
 
     // 4. Fee only (no affirmative petsAllowed)
     const feeOnlyPolicy = { petsAllowed: null, fee: { amount: 50, currency: "USD", period: "stay" } };
     const feeBadge = deriveSearchBadge(feeOnlyPolicy);
     assert.equal(feeBadge.statusKey, "restrictions");
-    assert.equal(feeBadge.className, "vdp-search-badge vdp-badge-restrictions");
+    assert.equal(feeBadge.className, "paw-search-badge paw-badge-restrictions");
     assert.equal(feeBadge.text, "Pet restrictions · $50/stay");
 
     // 5. Max dogs only (no affirmative petsAllowed)
     const maxDogsOnlyPolicy = { petsAllowed: null, maxDogs: 2 };
     const maxDogsBadge = deriveSearchBadge(maxDogsOnlyPolicy);
     assert.equal(maxDogsBadge.statusKey, "restrictions");
-    assert.equal(maxDogsBadge.className, "vdp-search-badge vdp-badge-restrictions");
+    assert.equal(maxDogsBadge.className, "paw-search-badge paw-badge-restrictions");
     assert.equal(maxDogsBadge.text, "Pet restrictions · Max 2");
 
     // 6. Restriction note count only (no affirmative petsAllowed)
     const noteCountPolicy = { petsAllowed: null, restrictionNoteCount: 1 };
     const noteCountBadge = deriveSearchBadge(noteCountPolicy);
     assert.equal(noteCountBadge.statusKey, "restrictions");
-    assert.equal(noteCountBadge.className, "vdp-search-badge vdp-badge-restrictions");
+    assert.equal(noteCountBadge.className, "paw-search-badge paw-badge-restrictions");
     assert.equal(noteCountBadge.text, "Pet restrictions");
   });
 
