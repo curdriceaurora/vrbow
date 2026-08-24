@@ -1,5 +1,5 @@
 {
-  "name": "vrbow",
+  "name": "pawcheck",
   "private": true,
   "scripts": {
     "test": "node --test",

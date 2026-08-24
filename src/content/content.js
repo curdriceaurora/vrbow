@@ -2,7 +2,7 @@
 (() => {
   function getSiteRegistry() {
     if (globalThis.PawSiteRegistry) return globalThis.PawSiteRegistry;
-    console.warn("[vrbow] PawSiteRegistry is unavailable; check script load order");
+    console.warn("[pawcheck] PawSiteRegistry is unavailable; check script load order");
     return null;
   }
 
@@ -161,7 +161,7 @@
     if (error?.message?.includes("Extension context invalidated")) {
       lifecycle.__test.invalidate();
     } else {
-      console.warn("vrbow: unexpected error registering storage listener", error);
+      console.warn("pawcheck: unexpected error registering storage listener", error);
     }
   }
 
@@ -188,7 +188,7 @@
     if (error?.message?.includes("Extension context invalidated")) {
       lifecycle.__test.invalidate();
     } else {
-      console.warn("vrbow: unexpected error registering runtime listener", error);
+      console.warn("pawcheck: unexpected error registering runtime listener", error);
     }
   }
 

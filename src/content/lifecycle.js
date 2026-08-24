@@ -71,7 +71,7 @@
         invalidate();
         return;
       }
-      console.warn(`vrbow: unexpected error in ${operation}`, error);
+      console.warn(`pawcheck: unexpected error in ${operation}`, error);
     }
 
     function storageCall(method, positionalArgs, callback) {

@@ -229,7 +229,7 @@ async function inspectStressSearchUrl(ws, url, label) {
 
 async function main() {
   const binary = findChrome();
-  const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), "vrbow-stress-"));
+  const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), "pawcheck-stress-"));
   const port = 9444;
 
   const chromeProc = spawn(binary, [

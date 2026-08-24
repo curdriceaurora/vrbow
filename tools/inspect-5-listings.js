@@ -159,7 +159,7 @@ async function inspectSearchUrl(ws, url, label) {
 
 async function main() {
   const binary = findChrome();
-  const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), "vrbow-diag-"));
+  const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), "pawcheck-diag-"));
   const port = 9333;
 
   const chromeProc = spawn(binary, [
